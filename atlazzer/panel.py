@@ -45,6 +45,7 @@ class AtlazzerPanel(Panel):
         op.time = context.scene.atlas_props.pack_analysis_time
         op.scale = context.scene.atlas_props.pack_scale
         col.operator('atlas.bake', text = '4. Bake Atlas')
+        col.operator('atlas.replace_resources', text = '5. Replace Images By Atlas')
 
         layout.prop(context.scene.atlas_props, 'export')
 

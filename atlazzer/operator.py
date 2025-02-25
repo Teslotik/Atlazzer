@@ -450,11 +450,38 @@ class AtlasBakeOperator(Operator):
             for ((tex, resource, region), image) in zip(layer, images):
                 image = image.resize((int(region.w * w), int(region.h * h)))
                 atlas.paste(image, (int(region.x * w), int(region.y * h)), image)
+            bpy.ops.screen.area_dupli('INVOKE_DEFAULT')
+            context.area.type = 'IMAGE_EDITOR'
+            name = f'{layer[0][1].layer}'
+            img = util.pillow_to_blender(name, atlas)
+            context.space_data.image = img
+            context.area.tag_redraw()
+            img.save(filepath = os.path.join(path, f'{name}.png'))
             print(f'Atlas backed: {i + 1} / {len(data)}')
-            atlas = atlas.transpose(PIL.Image.Transpose.FLIP_TOP_BOTTOM)
-            atlas.show()
-            atlas.save(os.path.join(path, f'{layer[0][1].layer}.png'))
             i += 1
         self.report({'INFO'}, f'Saved {i} to {path}')
+
+        return {'FINISHED'}
+
+
+
+class AtlasReplaceResourcesOperator(Operator):
+    bl_idname = 'atlas.replace_resources'
+    bl_label = 'Replace Atlas Images'
+
+    def execute(self, context:Context):
+        for obj in context.selected_objects:
+            if obj.type != 'MESH': continue
+            mesh = obj.data
+
+            for resource in mesh.region_resources:
+                for material in mesh.materials:
+                    if material is None: continue
+                    for node in material.node_tree.nodes:
+                        if not hasattr(node, 'image'): continue
+                        if not node.image == resource.image: continue
+                        image = bpy.data.images.get(f'{resource.layer}')
+                        if not image: continue
+                        node.image = image
 
         return {'FINISHED'}

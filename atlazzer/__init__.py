@@ -40,6 +40,7 @@ classes = [
     operator.AtlasCreateOperator,
     operator.AtlasPackOperator,
     operator.AtlasBakeOperator,
+    operator.AtlasReplaceResourcesOperator,
     
     panel.AtlazzerPanel,
     panel.RegionsPanel,

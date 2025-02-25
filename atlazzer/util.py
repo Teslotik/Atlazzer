@@ -2,6 +2,7 @@ import subprocess
 import os, sys
 from typing import List
 
+import bpy
 from bpy.types import Image
 
 from . import constant
@@ -36,4 +37,29 @@ def blender_to_pillow(image:Image):
 
     # img.show()
 
+    return img
+
+def pillow_to_blender(name:str, image) -> Image:
+    import PIL.Image
+    image:PIL.Image = image
+
+    w, h = image.size
+    pixels = list(image.getdata())
+
+    if image.mode == 'L':
+        img = bpy.data.images.new(name, width = w, height = h, alpha = False)
+        pixels_float = [(r / 255, ) for r in pixels]
+        img.pixels = [channel for pixel in pixels_float for channel in pixel]
+    elif image.mode == 'RGB':
+        img = bpy.data.images.new(name, width = w, height = h, alpha = False)
+        pixels_float = [(r / 255, g / 255, b / 255) for r, g, b in pixels]
+        img.pixels = [channel for pixel in pixels_float for channel in pixel]
+    elif image.mode == 'RGBA':
+        img = bpy.data.images.new(name, width = w, height = h, alpha = True)
+        pixels_float = [(r / 255, g / 255, b / 255, a / 255) for r, g, b, a in pixels]
+        img.pixels = [channel for pixel in pixels_float for channel in pixel]
+    else:
+        raise 'Failed to convert mode'
+    
+    img.update()
     return img
