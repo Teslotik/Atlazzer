@@ -324,8 +324,7 @@ class AtlasPackOperator(Operator):
     def estimate_square(self, regions):
         '''Fits in square metric'''
         w, h = self.size(regions)
-        weight = 2
-        return pow(w * h, weight)
+        return abs(w - h) * (w * h)
     
     def estimate_occupied(self, regions):
         '''Less free space metric'''
@@ -355,21 +354,34 @@ class AtlasPackOperator(Operator):
     # TODO Performance of the outer loop can be improved by random function
     def stick(self, regions, step):
         '''Move regions towards origin of coordinates'''
+        def left(region):
+            horizontal = round(region.x / step)
+            for i in range(0, horizontal):
+                region.x = (horizontal - i - 1) * step
+                if any(self.intersects(region, r) for r in regions):
+                    region.x = (horizontal - i) * step
+                    break
+
+        def bottom(region):
+            vertical = round(region.y / step)
+            for i in range(0, vertical):
+                region.y = (vertical - i - 1) * step
+                if any(self.intersects(region, r) for r in regions):
+                    region.y = (vertical - i) * step
+                    break
+
         for _ in range(len(regions)):
             for region in regions:
-                horizontal = round(region.x / step)
-                for i in range(0, horizontal):
-                    region.x = (horizontal - i - 1) * step
-                    if any(self.intersects(region, r) for r in regions):
-                        region.x = (horizontal - i) * step
-                        break
+                left(region)
+                bottom(region)
+                # NOTE Doesn't wortk, distrubution became more "random"
+                # if random() < 0.5:  # make distribution more square
+                #     left(region)
+                #     bottom(region)
+                # else:
+                #     bottom(region)
+                #     left(region)
 
-                vertical = round(region.y / step)
-                for i in range(0, vertical):
-                    region.y = (vertical - i - 1) * step
-                    if any(self.intersects(region, r) for r in regions):
-                        region.y = (vertical - i) * step
-                        break
 
     @classmethod
     def poll(cls, context:Context):
