@@ -25,9 +25,15 @@ class AtlazzerPanel(Panel):
         layout.prop(region_props, 'draw_regions')
 
         layout.label(text = 'Atlas Size')
-        row = layout.row(align = True)
-        row.prop(context.scene.atlas_props, 'atlas_w', text = '')
-        row.prop(context.scene.atlas_props, 'atlas_h', text = '')
+        row = layout.row()
+        group = row.row(align = True)
+        group.prop(context.scene.atlas_props, 'atlas_w', text = '')
+        group.prop(context.scene.atlas_props, 'atlas_h', text = '')
+        group = row.row(align = True)
+        op = group.operator('atlas.scale', text = '0.5')
+        op.factor = 0.5
+        op = group.operator('atlas.scale', text = '2.0')
+        op.factor = 2.0
 
         col = layout.column(align = True)
         col.operator('atlas.create', text = '1. Create Atlas')

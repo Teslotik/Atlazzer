@@ -241,6 +241,23 @@ class RegionFindResourcesOperator(Operator):
 
 
 
+class AtlasScaleOperator(bpy.types.Operator):
+    bl_idname = 'atlas.scale'
+    bl_label = 'Scale Atlas'
+
+    factor:FloatProperty(
+        name = 'Factor',
+        default = 2.0,
+        min = 0.001
+    )
+
+    def execute(self, context:Context):
+        context.scene.atlas_props.atlas_w = round(context.scene.atlas_props.atlas_w * self.factor)
+        context.scene.atlas_props.atlas_h = round(context.scene.atlas_props.atlas_h * self.factor)
+        return {'FINISHED'}
+
+
+
 class AtlasCreateOperator(Operator):
     bl_idname = 'atlas.create'
     bl_label = 'Create Atlas'
