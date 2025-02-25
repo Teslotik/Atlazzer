@@ -5,7 +5,7 @@ The addon allows you to transform, pack and sort islands, find texures and bake 
 
 ## Screenshots
 
-![](screenshots/addon.png)
+![](demo/addon.png)
 
 ## Installation
 
@@ -32,7 +32,9 @@ If you don't see all regions, toggle this property. This happens when you select
 
 ### Create atlas
 
-![](screenshots/guide.mp4)
+![](demo/guide.mp4)
+
+Note: you can find video guide in the demo folder.
 
 Open UV editor and open side panel (N).
 
