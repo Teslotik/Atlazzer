@@ -98,4 +98,4 @@ class RegionProperties(PropertyGroup):
 
 class RegionResource(PropertyGroup):
     image:PointerProperty(type = Image)
-    layer:IntProperty(default = 0)  # NOTE Idk should it be int or str for better user experience
+    layer:StringProperty(default = 'color')  # NOTE Idk should it be int or str for better user experience

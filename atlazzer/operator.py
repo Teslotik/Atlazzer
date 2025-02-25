@@ -120,7 +120,7 @@ class RegionAddResourceOperator(Operator):
         mesh = bpy.data.objects[self.target].data
         resource = mesh.region_resources.add()
         mesh.region_resource_index = len(mesh.region_resources) - 1
-        resource.layer = mesh.region_resource_index
+        resource.layer = f'color{mesh.region_resource_index}'
         return {'FINISHED'}
     
     def invoke(self, context:Context, event:Event):
@@ -236,7 +236,7 @@ class RegionFindResourcesOperator(Operator):
                 resource = mesh.region_resources.add()
                 resource.image = image
                 mesh.region_resource_index = len(mesh.region_resources) - 1
-                resource.layer = mesh.region_resource_index
+                resource.layer = f'color{mesh.region_resource_index}'
         return {'FINISHED'}
 
 
