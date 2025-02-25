@@ -32,6 +32,8 @@ If you don't see all regions, toggle this property. This happens when you select
 
 ### Create atlas
 
+![](screenshots/guide.mp4)
+
 Open UV editor and open side panel (N).
 
 1. Select multiple objects you want to bake textures from
@@ -59,4 +61,6 @@ Discord: [https://discord.gg/duDwM6PjGk](https://discord.gg/duDwM6PjGk)
 
 Huge thanks to the people who came up with the idea for this add-on and helped with the UX:
 
-[ItShaman](https://vrchat.com/home/user/usr_8491a3f9-7921-4934-894e-18ec4e404a4d), [Fenrigore](https://vrchat.com/home/user/usr_92fefe81-8c8c-484d-9fdf-26c003a1630f)
+[ItShaman](https://vrchat.com/home/user/usr_8491a3f9-7921-4934-894e-18ec4e404a4d)
+
+[Fenrigore](https://vrchat.com/home/user/usr_92fefe81-8c8c-484d-9fdf-26c003a1630f), Telegram: @Fenrig0re
