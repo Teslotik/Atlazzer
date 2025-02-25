@@ -374,11 +374,13 @@ class AtlasPackOperator(Operator):
         elapsed = 0
         best = None
         weight = 0
-        border = max(max(self.size(regions)), 1) * 2
+        width, height = self.size(regions)
+        width = max(width, 1) * 2
+        height = max(height, 1) * 2
         while elapsed <= self.time:
             generated = [self.Rect(r,
-                randint(0, round((border - r.w) * scale)) / scale,
-                randint(0, round((border - r.w) * scale)) / scale,
+                randint(0, round((width - r.w) * scale)) / scale,
+                randint(0, round((height - r.h) * scale)) / scale,
                 r.w, r.h
             ) for r in regions]
 
