@@ -1,7 +1,7 @@
 bl_info = {
     'name': 'Atlazzer',
     'author': 'Sergei S. aka Teslotik',
-    'version': (0, 1),
+    'version': (0, 2),
     'blender': (4, 3, 0),
     'location': 'UV Editor -> Atlazzer',
     'description': 'Tools to work with atlas',
