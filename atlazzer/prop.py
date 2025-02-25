@@ -48,6 +48,14 @@ class AtlasProperties(PropertyGroup):
         name = 'Pack Scale',
         default = True
     )
+    pack_metric:EnumProperty(
+        name = 'Pack Metric',
+        items = [
+            ('SQUARE', 'Square', '', 1),
+            ('OCCUPIED', 'Occupied', '', 2)
+        ],
+        default = 'OCCUPIED'
+    )
     export:StringProperty(
         name = 'Export',
         subtype = 'DIR_PATH',

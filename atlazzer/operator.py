@@ -9,7 +9,7 @@ from copy import deepcopy
 
 import bpy
 from bpy.types import Operator, Context, Event, Image, Mesh, Object
-from bpy.props import StringProperty, BoolProperty, FloatProperty, IntProperty
+from bpy.props import StringProperty, BoolProperty, FloatProperty, IntProperty, EnumProperty
 
 from . import constant
 from . import util
@@ -298,6 +298,15 @@ class AtlasPackOperator(Operator):
         min = 0
     )
 
+    metric:EnumProperty(
+        name = 'Metric',
+        items = [
+            ('SQUARE', 'Square', '', 1),
+            ('OCCUPIED', 'Occupied', '', 2)
+        ],
+        default = 'OCCUPIED'
+    )
+
     def size(self, regions):
         w = max(r.x + r.w for r in regions) - min(r.x for r in regions)
         h = max(r.y + r.h for r in regions) - min(r.y for r in regions)
@@ -312,11 +321,19 @@ class AtlasPackOperator(Operator):
     def grid(self, v:float, step:float):
         return math.floor(v / step) * step
 
-    def estimate(self, regions):
+    def estimate_square(self, regions):
         '''Fits in square metric'''
         w, h = self.size(regions)
         weight = 2
         return pow(w * h, weight)
+    
+    def estimate_occupied(self, regions):
+        '''Less free space metric'''
+        occupied = sum(r.w * r.h for r in regions)
+        w, h = self.size(regions)
+        total = w * h
+        # In theory negative values are impossible
+        return total - occupied
 
     def resolve(self, regions, step):
         '''Bubble collisions'''
@@ -386,7 +403,10 @@ class AtlasPackOperator(Operator):
 
             self.resolve(generated, step)
             self.stick(generated, step)
-            w = self.estimate(generated)
+            if self.metric == 'SQUARE':
+                w = self.estimate_square(generated)
+            elif self.metric == 'OCCUPIED':
+                w = self.estimate_occupied(generated)
             if best is None or w < weight:
                 best = generated
                 weight = w
