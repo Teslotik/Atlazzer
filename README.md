@@ -49,3 +49,9 @@ Open UV editor and open side panel (N).
 1. Click `Bake Atlas`
 1. ...
 1. Done! You can find images in the `export` path or next to the .blend file if you didn't specify a path
+
+### Community
+
+Have an idea or an issue? Or maybe you're looking for a team? Want to share your project? - Join our community!
+
+Discord: [https://discord.gg/duDwM6PjGk](https://discord.gg/duDwM6PjGk)
