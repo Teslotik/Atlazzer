@@ -15,6 +15,10 @@ The addon allows you to transform, pack and sort islands, find texures and bake 
 1. Find and select archive
 1. Make sure addon is enabled
 
+### Reinstallation
+
+Same as installation, but requires restarting Blender to update the internal state.
+
 ## Guide
 
 ### After installation
