@@ -6,6 +6,7 @@ from functools import reduce
 from random import choice, randint, random
 import time
 from copy import deepcopy
+import math
 
 import bpy
 from bpy.types import Operator, Context, Event, Image, Mesh, Object
@@ -275,7 +276,7 @@ class AtlasCreateOperator(Operator):
 
 
 
-class AtlasPackOperator(Operator):
+class AtlasPackHeuristicOperator(Operator):
     class Rect:
         def __init__(self, proto, x, y, w, h):
             self.proto = proto
@@ -284,7 +285,7 @@ class AtlasPackOperator(Operator):
             self.w = w
             self.h = h
 
-    bl_idname = 'atlas.pack'
+    bl_idname = 'atlas.pack_heuristic'
     bl_label = 'Pack Atlas'
     
     scale:BoolProperty(
@@ -434,6 +435,65 @@ class AtlasPackOperator(Operator):
             region.proto.x -= dx
             region.proto.y -= dy
 
+        return {'FINISHED'}
+
+
+
+class AtlasPack2048Operator(Operator):
+    bl_idname = 'atlas.pack_2048'
+    bl_label = 'Pack Atlas'
+
+    @classmethod
+    def poll(cls, context:Context):
+        if context.mode != 'OBJECT': return False
+        if len(context.selected_objects) == 0: return False
+        if not hasattr(context.space_data, 'image'): return False
+        if context.space_data.image is None: return False
+        return True
+
+    # https://blog.magnum.graphics/backstage/pot-array-packing/
+    def pack(self, atlas_size, regions):
+        output = [[0, 0] for _ in range(len(regions))]
+        
+        free = 1
+        previous_size = atlas_size
+        
+        for i, size in enumerate(regions):
+            size = list(size)
+            
+            if free == 0:
+                free = 1
+                previous_size = atlas_size
+            
+            free *= (previous_size[0] // size[0]) * (previous_size[1] // size[1])
+
+            side_slot_count = atlas_size[0] // size[0]
+            layer_depth = math.floor(math.log2(side_slot_count))
+            slot_index = side_slot_count * side_slot_count - free
+            
+            coordinates = [0, 0]
+            
+            for j in range(layer_depth):
+                if slot_index & (1 << (2 * (layer_depth - j - 1))):
+                    coordinates[0] += atlas_size[0] >> (j + 1)
+                if slot_index & (1 << (2 * (layer_depth - j - 1) + 1)):
+                    coordinates[1] += atlas_size[1] >> (j + 1)
+            
+            output[i] = [coordinates[0], coordinates[1]]
+            previous_size = size
+            free -= 1
+        
+        return output
+
+    def execute(self, context:Context):
+        regions = sorted([o.data.region_props for o in context.selected_objects if o.type == 'MESH'], key = lambda r: max(r.w, r.h), reverse = True)
+        sorted_sizes = [(r.xw, r.xh) for r in regions]
+        result = self.pack((context.scene.atlas_props.atlas_w, context.scene.atlas_props.atlas_h), sorted_sizes)
+        for (region, (x, y)) in zip(regions, result):
+            region.xx = x
+            region.xy = y
+        if any(r.xw != r.xh or (math.log2(r.xw) % 1 != 0) or (math.log2(r.xh) % 1 != 0) for r in regions):
+            self.report({'WARNING'}, 'Algorithm works correctly only with squares')
         return {'FINISHED'}
 
 

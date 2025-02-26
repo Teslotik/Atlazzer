@@ -39,13 +39,16 @@ class AtlazzerPanel(Panel):
         col.operator('atlas.create', text = '1. Create Atlas')
         col.operator('region.find_resources', text = '2. Find Images')
         pack = col.column(align = True)
-        op = pack.operator('atlas.pack', text = '3. Pack Atlas')
-        pack.prop(context.scene.atlas_props, 'pack_analysis_time')
-        pack.prop(context.scene.atlas_props, 'pack_scale')
-        pack.prop(context.scene.atlas_props, 'pack_metric')
-        op.time = context.scene.atlas_props.pack_analysis_time
-        op.scale = context.scene.atlas_props.pack_scale
-        op.metric = context.scene.atlas_props.pack_metric
+        pack.prop(context.scene.atlas_props, 'pack_algorithm')
+        if context.scene.atlas_props.pack_algorithm in ('SQUARE', 'OCCUPIED'):
+            heuristic = pack.operator('atlas.pack_heuristic', text = '3. Pack Atlas Heuristic')
+            pack.prop(context.scene.atlas_props, 'pack_analysis_time')
+            pack.prop(context.scene.atlas_props, 'pack_scale')
+            heuristic.time = context.scene.atlas_props.pack_analysis_time
+            heuristic.scale = context.scene.atlas_props.pack_scale
+            heuristic.metric = context.scene.atlas_props.pack_algorithm
+        elif context.scene.atlas_props.pack_algorithm == '2048':
+            pack.operator('atlas.pack_2048', text = '3. Pack Atlas 2048')
         col.operator('atlas.bake', text = '4. Bake Atlas')
         col.operator('atlas.replace_resources', text = '5. Replace Images By Atlas')
 

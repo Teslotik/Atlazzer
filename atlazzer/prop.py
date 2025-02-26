@@ -1,3 +1,5 @@
+import math
+
 import bpy
 from bpy.types import PropertyGroup, SpaceView3D, SpaceImageEditor, Scene, Image
 from bpy.props import BoolProperty, FloatProperty, IntProperty, PointerProperty, StringProperty, EnumProperty
@@ -48,11 +50,12 @@ class AtlasProperties(PropertyGroup):
         name = 'Pack Scale',
         default = True
     )
-    pack_metric:EnumProperty(
-        name = 'Pack Metric',
+    pack_algorithm:EnumProperty(
+        name = 'Pack Algorithm',
         items = [
             ('SQUARE', 'Square', '', 1),
-            ('OCCUPIED', 'Occupied', '', 2)
+            ('OCCUPIED', 'Occupied', '', 2),
+            ('2048', '2048', '', 3)
         ],
         default = 'OCCUPIED'
     )
@@ -71,10 +74,10 @@ class RegionProperties(PropertyGroup):
     w:FloatProperty(set = lambda self, v: self.resize_w(v), get = lambda self: self.pw)
     h:FloatProperty(set = lambda self, v: self.resize_h(v), get = lambda self: self.ph)
     # Pixel units
-    xx:IntProperty(name = 'x', set = lambda self, v: setattr(self, 'x', v / bpy.context.space_data.image.size[0]), get = lambda self: round(self.x * bpy.context.space_data.image.size[0]))
-    xy:IntProperty(name = 'y', set = lambda self, v: setattr(self, 'y', v / bpy.context.space_data.image.size[1]), get = lambda self: round(self.y * bpy.context.space_data.image.size[1]))
-    xw:IntProperty(name = 'w', set = lambda self, v: setattr(self, 'w', v / bpy.context.space_data.image.size[0]), get = lambda self: round(self.w * bpy.context.space_data.image.size[0]))
-    xh:IntProperty(name = 'h', set = lambda self, v: setattr(self, 'h', v / bpy.context.space_data.image.size[1]), get = lambda self: round(self.h * bpy.context.space_data.image.size[1]))
+    xx:IntProperty(name = 'x', set = lambda self, v: setattr(self, 'x', v / bpy.context.space_data.image.size[0]), get = lambda self: math.floor(self.x * bpy.context.space_data.image.size[0]))
+    xy:IntProperty(name = 'y', set = lambda self, v: setattr(self, 'y', v / bpy.context.space_data.image.size[1]), get = lambda self: math.floor(self.y * bpy.context.space_data.image.size[1]))
+    xw:IntProperty(name = 'w', set = lambda self, v: setattr(self, 'w', v / bpy.context.space_data.image.size[0]), get = lambda self: math.floor(self.w * bpy.context.space_data.image.size[0]))
+    xh:IntProperty(name = 'h', set = lambda self, v: setattr(self, 'h', v / bpy.context.space_data.image.size[1]), get = lambda self: math.floor(self.h * bpy.context.space_data.image.size[1]))
     # Internal - use as previous pos/size
     px:FloatProperty(default = 0)
     py:FloatProperty(default = 0)
