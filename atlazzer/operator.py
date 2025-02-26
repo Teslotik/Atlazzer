@@ -341,15 +341,11 @@ class AtlasPackOperator(Operator):
                 intersections = [r for r in regions if self.intersects(region, r)]
                 if not intersections: continue
                 neighbor = choice(intersections)
-                direction = choice(('l', 'r', 't', 'b'))
+                direction = choice(('l', 't'))
                 if direction == 'l':
                     region.x = self.grid(neighbor.x + neighbor.w + step, step)
-                elif direction == 'r':
-                    region.x = self.grid(neighbor.x - region.w - step, step)
                 elif direction == 't':
                     region.y = self.grid(neighbor.y + neighbor.h + step, step)
-                elif direction == 'b':
-                    region.y = self.grid(neighbor.y - region.h - step, step)
 
     # TODO Performance of the outer loop can be improved by random function
     def stick(self, regions, step):
@@ -403,15 +399,8 @@ class AtlasPackOperator(Operator):
         elapsed = 0
         best = None
         weight = 0
-        width, height = self.size(regions)
-        width = max(width, 1) * 2
-        height = max(height, 1) * 2
         while elapsed <= self.time:
-            generated = [self.Rect(r,
-                randint(0, round((width - r.w) * scale)) / scale,
-                randint(0, round((height - r.h) * scale)) / scale,
-                r.w, r.h
-            ) for r in regions]
+            generated = [self.Rect(r, 0, 0, r.w, r.h) for r in regions]
 
             self.resolve(generated, step)
             self.stick(generated, step)
