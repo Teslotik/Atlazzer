@@ -18,6 +18,21 @@ from bpy.types import Object, Mesh, Operator, Menu
 
 from typing import List
 
+addon_modules = [
+    'atlazzer.constant',
+    'atlazzer.draw',
+    'atlazzer.operator',
+    'atlazzer.panel',
+    'atlazzer.prop',
+    'atlazzer.util',
+
+    'PIL',
+    'PIL.Image'
+]
+for mod in addon_modules:
+    if mod in sys.modules:
+        del sys.modules[mod]
+
 from . import constant
 from . import prop
 from . import operator
