@@ -308,14 +308,15 @@ class AtlasPackHeuristicOperator(Operator):
         default = 'OCCUPIED'
     )
 
+    bias = 1e-7
+
     def size(self, regions):
         w = max(r.x + r.w for r in regions) - min(r.x for r in regions)
         h = max(r.y + r.h for r in regions) - min(r.y for r in regions)
         return w, h
 
     def intersects(self, a, b):
-        bias = 1e-7
-        return a is not b and a.x + bias < b.x + b.w and a.x + a.w - bias > b.x and a.y + bias < b.y + b.h and a.y + a.h - bias > b.y
+        return a is not b and a.x + self.bias < b.x + b.w and a.x + a.w - self.bias > b.x and a.y + self.bias < b.y + b.h and a.y + a.h - self.bias > b.y
     
     def collides(self, regions):
         return any(self.intersects(a, b) for a in regions for b in regions)
@@ -336,6 +337,30 @@ class AtlasPackHeuristicOperator(Operator):
         # In theory negative values are impossible
         return total - occupied
 
+    # TODO Performance of the outer loop can be improved by random function
+    def stick(self, regions, step):
+        '''Move regions towards origin of coordinates'''
+        def left(region):
+            horizontal = round(region.x / step)
+            for i in range(0, horizontal):
+                region.x = (horizontal - i - 1) * step
+                if any(self.intersects(region, r) for r in regions):
+                    region.x = (horizontal - i) * step
+                    break
+
+        def bottom(region):
+            vertical = round(region.y / step)
+            for i in range(0, vertical):
+                region.y = (vertical - i - 1) * step
+                if any(self.intersects(region, r) for r in regions):
+                    region.y = (vertical - i) * step
+                    break
+
+        for _ in range(len(regions)):
+            for region in regions:
+                left(region)
+                bottom(region)
+
     def resolve(self, regions, step):
         '''Bubble collisions'''
         while self.collides(regions):
@@ -345,9 +370,9 @@ class AtlasPackHeuristicOperator(Operator):
                 neighbor = choice(intersections)
                 direction = choice(('l', 't'))
                 if direction == 'l':
-                    region.x = self.grid(neighbor.x + neighbor.w, step)
+                    region.x = neighbor.x + neighbor.w + self.bias * 2
                 elif direction == 't':
-                    region.y = self.grid(neighbor.y + neighbor.h, step)
+                    region.y = neighbor.y + neighbor.h + self.bias * 2
 
     @classmethod
     def poll(cls, context:Context):
@@ -379,6 +404,7 @@ class AtlasPackHeuristicOperator(Operator):
             generated = [self.Rect(r, 0, 0, r.w, r.h) for r in regions]
 
             self.resolve(generated, step)
+            self.stick(generated, step)
             if self.metric == 'SQUARE':
                 w = self.estimate_square(generated)
             elif self.metric == 'OCCUPIED':
