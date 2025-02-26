@@ -314,7 +314,8 @@ class AtlasPackHeuristicOperator(Operator):
         return w, h
 
     def intersects(self, a, b):
-        return a is not b and a.x < b.x + b.w and a.x + a.w > b.x and a.y < b.y + b.h and a.y + a.h > b.y
+        bias = 1e-7
+        return a is not b and a.x + bias < b.x + b.w and a.x + a.w - bias > b.x and a.y + bias < b.y + b.h and a.y + a.h - bias > b.y
     
     def collides(self, regions):
         return any(self.intersects(a, b) for a in regions for b in regions)
@@ -344,41 +345,9 @@ class AtlasPackHeuristicOperator(Operator):
                 neighbor = choice(intersections)
                 direction = choice(('l', 't'))
                 if direction == 'l':
-                    region.x = self.grid(neighbor.x + neighbor.w + step, step)
+                    region.x = self.grid(neighbor.x + neighbor.w, step)
                 elif direction == 't':
-                    region.y = self.grid(neighbor.y + neighbor.h + step, step)
-
-    # TODO Performance of the outer loop can be improved by random function
-    def stick(self, regions, step):
-        '''Move regions towards origin of coordinates'''
-        def left(region):
-            horizontal = round(region.x / step)
-            for i in range(0, horizontal):
-                region.x = (horizontal - i - 1) * step
-                if any(self.intersects(region, r) for r in regions):
-                    region.x = (horizontal - i) * step
-                    break
-
-        def bottom(region):
-            vertical = round(region.y / step)
-            for i in range(0, vertical):
-                region.y = (vertical - i - 1) * step
-                if any(self.intersects(region, r) for r in regions):
-                    region.y = (vertical - i) * step
-                    break
-
-        for _ in range(len(regions)):
-            for region in regions:
-                left(region)
-                bottom(region)
-                # NOTE Doesn't wortk, distrubution became more "random"
-                # if random() < 0.5:  # make distribution more square
-                #     left(region)
-                #     bottom(region)
-                # else:
-                #     bottom(region)
-                #     left(region)
-
+                    region.y = self.grid(neighbor.y + neighbor.h, step)
 
     @classmethod
     def poll(cls, context:Context):
@@ -389,6 +358,12 @@ class AtlasPackHeuristicOperator(Operator):
 
         regions = [o.data.region_props for o in context.selected_objects if o.type == 'MESH']
         
+        w, h = max(r.w for r in regions), max(r.h for r in regions)
+        source_scale = 1 / max(w, h)
+        for region in regions:
+            region.w = region.w * source_scale
+            region.h = region.h * source_scale
+
         # Define grid step
         scale = 1000
         step = reduce(math.gcd, [round(r.w * scale) for r in regions] + [round(r.h * scale) for r in regions]) / scale
@@ -404,7 +379,6 @@ class AtlasPackHeuristicOperator(Operator):
             generated = [self.Rect(r, 0, 0, r.w, r.h) for r in regions]
 
             self.resolve(generated, step)
-            self.stick(generated, step)
             if self.metric == 'SQUARE':
                 w = self.estimate_square(generated)
             elif self.metric == 'OCCUPIED':
@@ -421,14 +395,14 @@ class AtlasPackHeuristicOperator(Operator):
         assert(best is not None)
 
         # Apply result
-        w, h = self.size(best)
-        scale = max(w, h)
         if self.scale:
-            for region in best:
-                region.proto.x = region.x / scale
-                region.proto.y = region.y / scale
-                region.proto.w = region.w / scale
-                region.proto.h = region.h / scale
+            w, h = self.size(best)
+            source_scale = max(w, h)
+        for region in best:
+            region.proto.x = region.x / source_scale
+            region.proto.y = region.y / source_scale
+            region.proto.w = region.w / source_scale
+            region.proto.h = region.h / source_scale
         dx = min(r.proto.x for r in best)
         dy = min(r.proto.y for r in best)
         for region in best:
