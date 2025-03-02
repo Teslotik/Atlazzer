@@ -165,3 +165,18 @@ def menu_VIEW3D_MT_uv_map(self, context):
 	layout = self.layout
 	layout.separator()
 	layout.operator("uv.unwrap_polygons")
+
+
+
+class AtlazzerUVPanel(Panel):
+    '''Creates uv panel in UV editor'''
+    bl_idname = 'ATLAZZER_PT_uv'
+    bl_label = 'Atlazzer UV'
+    bl_space_type = 'IMAGE_EDITOR'
+    bl_region_type = 'UI'
+    bl_category = 'Atlazzer UV'
+
+    def draw(self, context:Context):
+        layout:UILayout = self.layout
+
+        layout.operator('uv.pack_rect')

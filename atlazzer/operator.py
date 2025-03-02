@@ -9,13 +9,14 @@ from copy import deepcopy
 import math
 
 import bpy
-from bpy.types import Operator, Context, Event, Image, Mesh, Object
+from bpy.types import Operator, Context, Event, Image, Mesh, Object, UILayout
 from bpy.props import StringProperty, BoolProperty, FloatProperty, IntProperty, EnumProperty
 from mathutils import Vector, Matrix
 
 from . import constant
 from . import util
 from . import prop
+from . import struct
 
 class InstallImageProcessingOperator(Operator):
     bl_idname = 'wm.install_image_processing'
@@ -575,10 +576,11 @@ class AtlasReplaceResourcesOperator(Operator):
 class UVUnwrapPolygonsOperator(Operator):
     bl_idname = 'uv.unwrap_polygons'
     bl_label = 'Unwrap polygons'
+    bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context:Context):
-        return context.active_object.type == 'MESH'
+        return context.active_object and context.active_object.type == 'MESH'
 
     def execute(self, context:Context):
         mode = bpy.context.object.mode
@@ -586,9 +588,10 @@ class UVUnwrapPolygonsOperator(Operator):
 
         mesh:Mesh = context.active_object.data
 
-        if mesh.uv_layers.active:
-            mesh.uv_layers.remove(mesh.uv_layers.active)
-        uv = mesh.uv_layers.new()
+        if not mesh.uv_layers.active:
+            mesh.uv_layers.new()
+        uv = mesh.uv_layers.active
+
         for polygon in mesh.polygons:
             vertices = [mesh.vertices[v].co for v in polygon.vertices]
 
@@ -621,3 +624,62 @@ class UVUnwrapPolygonsOperator(Operator):
 
         bpy.ops.object.mode_set(mode = mode)
         return {'FINISHED'}
+
+
+
+class UVPackRectOperator(Operator):
+    bl_idname = 'uv.pack_rect'
+    bl_label = 'Pack rect'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    margin:FloatProperty(
+        name = 'Margin',
+        default = 0.0,
+        min = 0.0
+    )
+
+    def draw(self, context:Context):
+        layout:UILayout = self.layout
+        layout.prop(self, 'margin')
+
+    @classmethod
+    def poll(cls, context:Context):
+        if not context.active_object: return False
+        if context.active_object.type != 'MESH': return False
+        if not context.active_object.data.uv_layers.active: return False
+        if not context.active_object.data.polygons: return False
+        return True
+
+    def execute(self, context:Context):
+        mode = bpy.context.object.mode
+        bpy.ops.object.mode_set(mode = 'OBJECT')
+
+        mesh:Mesh = context.active_object.data
+        uv = mesh.uv_layers.active
+
+        rects = []
+        margin = self.margin / max(context.space_data.image.size) if hasattr(context.space_data, 'image') and context.space_data.image else self.margin
+        for polygon in mesh.polygons:
+            min_x = min(uv.data[i].uv.x for i in polygon.loop_indices)
+            min_y = min(uv.data[i].uv.y for i in polygon.loop_indices)
+            max_x = max(uv.data[i].uv.x for i in polygon.loop_indices)
+            max_y = max(uv.data[i].uv.y for i in polygon.loop_indices)
+            rects.append(struct.UVRect(polygon, min_x, min_y,
+                (max_x - min_x) + margin * 2,
+                (max_y - min_y) + margin * 2,
+                margin = margin
+            ))
+
+        util.pack_shelf_decreasing_high(rects, (len(rects) ** 0.5) * (sum(r.w for r in rects) / len(rects)))
+        util.pack_shelf_decreasing_high(rects, 30)
+
+        for rect in rects:
+            min_x = min(uv.data[i].uv.x for i in rect.data.loop_indices)
+            min_y = min(uv.data[i].uv.y for i in rect.data.loop_indices)
+            for index in rect.data.loop_indices:
+                uv.data[index].uv.x = rect.x + (uv.data[index].uv.x - min_x) + rect.margin
+                uv.data[index].uv.y = rect.y + (uv.data[index].uv.y - min_y) + rect.margin
+
+        bpy.ops.object.mode_set(mode = mode)
+        return {'FINISHED'}
+    

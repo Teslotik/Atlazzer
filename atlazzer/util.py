@@ -6,6 +6,8 @@ import bpy
 from bpy.types import Image
 
 from . import constant
+from . import struct
+
 
 
 def install_module(mod:str, version:str|None, path:str):
@@ -63,3 +65,28 @@ def pillow_to_blender(name:str, image) -> Image:
     
     img.update()
     return img
+
+def pack_shelf_decreasing_high(rects, w:float):
+    if not rects: return
+
+    # Sort
+    rects.sort(key = lambda r: r.h, reverse = True)
+
+    # Pack
+    dx = 0
+    dy = 0
+    size = rects[0].h
+    inrow = 0
+    for i, rect in enumerate(rects):
+        if inrow and dx + rect.w > w:
+            dx = 0
+            dy += size
+            size = rect.h
+            inrow = 0
+        else:
+            inrow += 1
+        rect.x = dx
+        rect.y = dy
+        dx += rect.w
+    
+    return rects

@@ -25,6 +25,7 @@ addon_modules = [
     'atlazzer.panel',
     'atlazzer.prop',
     'atlazzer.util',
+    'atlazzer.struct',
 
     'PIL',
     'PIL.Image'
@@ -58,10 +59,12 @@ classes = [
     operator.AtlasBakeOperator,
     operator.AtlasReplaceResourcesOperator,
     operator.UVUnwrapPolygonsOperator,
+    operator.UVPackRectOperator,
     
     panel.AtlazzerPanel,
     panel.RegionsPanel,
-    panel.RegionResourcesList
+    panel.RegionResourcesList,
+    panel.AtlazzerUVPanel
 ]
 
 def register():
