@@ -193,14 +193,12 @@ class RegionCalcSizeOperator(Operator):
 
     @classmethod
     def poll(cls, context:Context):
-        if not hasattr(context.space_data, 'image'): return False
-        if context.space_data.image is None: return False
         if context.mode != 'OBJECT': return False
         return True
 
     def execute(self, context:Context):
         mesh = bpy.data.objects[self.target].data
-        if mesh.region_resources:
+        if mesh.region_resources and hasattr(context.space_data, 'image') and context.space_data.image:
             mesh.region_props.xw = max(r.image.size[0] for r in mesh.region_resources)
             mesh.region_props.xh = max(r.image.size[1] for r in mesh.region_resources)
         else:
@@ -496,6 +494,59 @@ class AtlasPack2048Operator(Operator):
             region.xy = y
         if any(r.xw != r.xh or (math.log2(r.xw) % 1 != 0) or (math.log2(r.xh) % 1 != 0) for r in regions):
             self.report({'WARNING'}, 'Algorithm works correctly only with squares')
+        return {'FINISHED'}
+
+
+
+class AtlasPackShelfOperator(Operator):
+    bl_idname = 'atlas.pack_shelf'
+    bl_label = 'Pack Atlas'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    scale:BoolProperty(
+        name = 'Scale',
+        default = True
+    )
+    margin:FloatProperty(
+        name = 'Margin',
+        default = 0.0,
+        min = 0.0
+    )
+
+    @classmethod
+    def poll(cls, context:Context):
+        if context.mode != 'OBJECT': return False
+        if len(context.selected_objects) == 0: return False
+        return True
+
+    def execute(self, context:Context):
+        rects = [struct.UVRect(o.data.region_props,
+            o.data.region_props.x,
+            o.data.region_props.y,
+            o.data.region_props.w,
+            o.data.region_props.h,
+            margin = self.margin
+        ) for o in context.selected_objects if o.type == 'MESH']
+
+        w = (len(rects) ** 0.5) * (sum(r.w for r in rects) / len(rects)) if self.scale else 1
+        util.pack_shelf_decreasing_high(rects, w)
+
+        min_x = min(r.x for r in rects)
+        min_y = min(r.y for r in rects)
+        w = max(r.x + r.w for r in rects) - min_x
+        h = max(r.y + r.h for r in rects) - min_y
+        if hasattr(context.space_data, 'image') and context.space_data.image:
+            margin_x = self.margin / context.space_data.image.size[0]
+            margin_y = self.margin / context.space_data.image.size[1]
+        else:
+            margin_x = margin_y = self.margin
+        scale = max(w, h) if self.scale else 1.0
+        for rect in rects:
+            rect.data.x = (rect.x + margin_x - min_x) / scale
+            rect.data.y = (rect.y + margin_y - min_y) / scale
+            rect.data.w = (rect.data.w - margin_x) / scale
+            rect.data.h = (rect.data.h - margin_y) / scale
+
         return {'FINISHED'}
 
 

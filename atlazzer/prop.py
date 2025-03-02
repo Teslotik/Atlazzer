@@ -55,7 +55,8 @@ class AtlasProperties(PropertyGroup):
         items = [
             ('SQUARE', 'Square', '', 1),
             ('OCCUPIED', 'Occupied', '', 2),
-            ('2048', '2048', '', 3)
+            ('2048', '2048', '', 3),
+            ('SHELF', 'Shelf', '', 4)
         ],
         default = 'OCCUPIED'
     )

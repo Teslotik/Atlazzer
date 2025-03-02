@@ -1,5 +1,5 @@
 class UVRect:
-    def __init__(self, data, x:float, y:float, w:float, h:float, margin:float):
+    def __init__(self, data, x:float, y:float, w:float, h:float, margin = 0.0):
         self.data = data
         self.x = x
         self.y = y

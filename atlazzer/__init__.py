@@ -56,6 +56,7 @@ classes = [
     operator.AtlasCreateOperator,
     operator.AtlasPackHeuristicOperator,
     operator.AtlasPack2048Operator,
+    operator.AtlasPackShelfOperator,
     operator.AtlasBakeOperator,
     operator.AtlasReplaceResourcesOperator,
     operator.UVUnwrapPolygonsOperator,

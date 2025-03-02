@@ -49,6 +49,8 @@ class AtlazzerPanel(Panel):
             heuristic.metric = context.scene.atlas_props.pack_algorithm
         elif context.scene.atlas_props.pack_algorithm == '2048':
             pack.operator('atlas.pack_2048', text = '3. Pack Atlas 2048')
+        elif context.scene.atlas_props.pack_algorithm == 'SHELF':
+            pack.operator('atlas.pack_shelf', text = '3. Pack Atlas Shelf')
         col.operator('atlas.bake', text = '4. Bake Atlas')
         col.operator('atlas.replace_resources', text = '5. Replace Images By Atlas')
 
