@@ -653,6 +653,12 @@ class UVUnwrapPolygonsOperator(Operator):
                 scale = max(w, h)
                 for item in uv.data:
                     item.uv = item.uv / scale * self.factor
+        
+        # Center uv to uv editor
+        dx = min(i.uv.x for i in uv.data)
+        dy = min(i.uv.y for i in uv.data)
+        for item in uv.data:
+            item.uv -= Vector((dx, dy))
 
         bpy.ops.object.mode_set(mode = mode)
         return {'FINISHED'}
