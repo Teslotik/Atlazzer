@@ -578,6 +578,22 @@ class UVUnwrapPolygonsOperator(Operator):
     bl_label = 'Unwrap polygons'
     bl_options = {'REGISTER', 'UNDO'}
 
+    scale:BoolProperty(
+        name = 'Scale',
+        default = True
+    )
+    factor:FloatProperty(
+        name = 'Factor',
+        min = 0,
+        default = 1
+    )
+
+    def draw(self, context:Context):
+        layout:UILayout = self.layout
+        layout.prop(self, 'scale')
+        if self.scale:
+            layout.prop(self, 'factor')
+
     @classmethod
     def poll(cls, context:Context):
         return context.active_object and context.active_object.type == 'MESH'
@@ -621,6 +637,22 @@ class UVUnwrapPolygonsOperator(Operator):
 
             for index, vertex in zip(polygon.loop_indices, vertices):
                 uv.data[index].uv = vertex.xy
+        
+        if self.scale:
+            material = context.active_object.active_material
+            if material and material.node_tree.nodes.active and hasattr(material.node_tree.nodes.active, 'image') and material.node_tree.nodes.active.image:
+                # Set scale to image
+                w, h = material.node_tree.nodes.active.image.size
+                for item in uv.data:
+                    item.uv.x = item.uv.x / w * self.factor
+                    item.uv.y = item.uv.y / h * self.factor
+            else:
+                # Normalize scale
+                w = (max(i.uv.x for i in uv.data) - min(i.uv.x for i in uv.data))
+                h = (max(i.uv.y for i in uv.data) - min(i.uv.y for i in uv.data))
+                scale = max(w, h)
+                for item in uv.data:
+                    item.uv = item.uv / scale * self.factor
 
         bpy.ops.object.mode_set(mode = mode)
         return {'FINISHED'}
@@ -671,7 +703,6 @@ class UVPackRectOperator(Operator):
             ))
 
         util.pack_shelf_decreasing_high(rects, (len(rects) ** 0.5) * (sum(r.w for r in rects) / len(rects)))
-        util.pack_shelf_decreasing_high(rects, 30)
 
         for rect in rects:
             min_x = min(uv.data[i].uv.x for i in rect.data.loop_indices)
