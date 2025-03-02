@@ -57,6 +57,7 @@ classes = [
     operator.AtlasPack2048Operator,
     operator.AtlasBakeOperator,
     operator.AtlasReplaceResourcesOperator,
+    operator.UVUnwrapPolygonsOperator,
     
     panel.AtlazzerPanel,
     panel.RegionsPanel,
@@ -66,6 +67,7 @@ classes = [
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+    bpy.types.VIEW3D_MT_uv_map.append(panel.menu_VIEW3D_MT_uv_map)
     bpy.types.Scene.atlas_props = bpy.props.PointerProperty(type = prop.AtlasProperties)
     bpy.types.Mesh.region_props = bpy.props.PointerProperty(type = prop.RegionProperties)
     bpy.types.Mesh.region_resources = bpy.props.CollectionProperty(type = prop.RegionResource)
@@ -74,6 +76,7 @@ def register():
 def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+    bpy.types.VIEW3D_MT_uv_map.remove(panel.menu_VIEW3D_MT_uv_map)
     del bpy.types.Mesh.region_resource_index
     del bpy.types.Mesh.region_resources
     del bpy.types.Mesh.region_props

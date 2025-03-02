@@ -11,6 +11,7 @@ import math
 import bpy
 from bpy.types import Operator, Context, Event, Image, Mesh, Object
 from bpy.props import StringProperty, BoolProperty, FloatProperty, IntProperty, EnumProperty
+from mathutils import Vector, Matrix
 
 from . import constant
 from . import util
@@ -567,4 +568,56 @@ class AtlasReplaceResourcesOperator(Operator):
                         if not image: continue
                         node.image = image
 
+        return {'FINISHED'}
+
+
+
+class UVUnwrapPolygonsOperator(Operator):
+    bl_idname = 'uv.unwrap_polygons'
+    bl_label = 'Unwrap polygons'
+
+    @classmethod
+    def poll(cls, context:Context):
+        return context.active_object.type == 'MESH'
+
+    def execute(self, context:Context):
+        mode = bpy.context.object.mode
+        bpy.ops.object.mode_set(mode = 'OBJECT')
+
+        mesh:Mesh = context.active_object.data
+
+        if mesh.uv_layers.active:
+            mesh.uv_layers.remove(mesh.uv_layers.active)
+        uv = mesh.uv_layers.new()
+        for polygon in mesh.polygons:
+            vertices = [mesh.vertices[v].co for v in polygon.vertices]
+
+            # Center vertices
+            center = Vector((sum(v.x for v in vertices), sum(v.y for v in vertices), sum(v.z for v in vertices))) / len(vertices)
+            for i, v in enumerate(vertices): vertices[i] = v - center
+
+            # Make polygon face up
+            a, b, c, *_ = vertices
+            v1 = b - a
+            v2 = c - a
+            normal = v1.cross(v2).normalized()
+            target_normal = Vector((0, 0, 1))
+            axis = normal.cross(target_normal)
+            angle = math.acos(normal.dot(target_normal))
+            matrix = Matrix.Rotation(angle, 4, axis)
+
+            for i, v in enumerate(vertices): vertices[i] = matrix @ v
+
+            # Reset polygon z rotation - make it align
+            a, b, c, *_ = vertices
+            vec = (b - a).normalized()
+            angle = math.atan2(vec.y, vec.x)
+            matrix = Matrix.Rotation(-angle, 4, Vector((0, 0, 1)))
+
+            for i, v in enumerate(vertices): vertices[i] = matrix @ v
+
+            for index, vertex in zip(polygon.loop_indices, vertices):
+                uv.data[index].uv = vertex.xy
+
+        bpy.ops.object.mode_set(mode = mode)
         return {'FINISHED'}

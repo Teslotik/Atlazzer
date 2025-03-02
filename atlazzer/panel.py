@@ -158,3 +158,10 @@ class RegionResourcesList(UIList):
             grid = layout.grid_flow(columns = 2, even_columns = True)
             grid.prop(item, 'layer', text = '', icon = 'RENDERLAYERS')
             grid.prop(item, 'image', text = '', icon = 'IMAGE_DATA')
+
+
+
+def menu_VIEW3D_MT_uv_map(self, context):
+	layout = self.layout
+	layout.separator()
+	layout.operator("uv.unwrap_polygons")
