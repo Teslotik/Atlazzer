@@ -182,3 +182,20 @@ class AtlazzerUVPanel(Panel):
         layout:UILayout = self.layout
 
         layout.operator('uv.pack_rect')
+
+        if not constant.DEBUG and not constant.is_image_processing_installed():
+            col = layout.column()
+            col.label(text = 'First, you MUST install image processing library')
+            col.operator('wm.install_image_processing')
+            return
+        
+        if context.active_object and context.active_object.type == 'MESH':
+            col = layout.column(align = True)
+            col.operator('uv.transfer_image')
+            row = col.row(align = True)
+            row.prop(context.active_object.data.uv_props, 'src_uv')
+            row.prop(context.active_object.data.uv_props, 'src_image')
+            row = col.row(align = True)
+            row.prop(context.active_object.data.uv_props, 'dst_uv')
+            row.prop(context.active_object.data.uv_props, 'dst_image')
+            col.label(text = 'WARNING! Only works for separate uv islands without connections!')

@@ -1,7 +1,7 @@
 import math
 
 import bpy
-from bpy.types import PropertyGroup, SpaceView3D, SpaceImageEditor, Scene, Image
+from bpy.types import PropertyGroup, SpaceView3D, SpaceImageEditor, Scene, Image, MeshUVLoopLayer
 from bpy.props import BoolProperty, FloatProperty, IntProperty, PointerProperty, StringProperty, EnumProperty
 
 from . draw import Painter
@@ -111,3 +111,21 @@ class RegionProperties(PropertyGroup):
 class RegionResource(PropertyGroup):
     image:PointerProperty(type = Image)
     layer:StringProperty(default = 'color')  # NOTE Idk should it be int or str for better user experience
+
+
+
+class UVProperties(PropertyGroup):
+    src_uv:StringProperty(
+        name = 'Source UV'
+    )
+    dst_uv:StringProperty(
+        name = 'Destination UV'
+    )
+    src_image:PointerProperty(
+        name = 'Source Image',
+        type = Image
+    )
+    dst_image:PointerProperty(
+        name = 'Destination Image',
+        type = Image
+    )

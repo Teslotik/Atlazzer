@@ -770,4 +770,63 @@ class UVPackRectOperator(Operator):
 
         bpy.ops.object.mode_set(mode = mode)
         return {'FINISHED'}
-    
+
+
+
+class UVTransferImageOperator(Operator):
+    bl_idname = 'uv.transfer_image'
+    bl_label = 'Transfer Image Islands'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def draw(self, context:Context):
+        pass
+
+    @classmethod
+    def poll(cls, context:Context):
+        if not context.active_object: return False
+        if context.active_object.type != 'MESH': return False
+        mesh = context.active_object.data
+        if not mesh.uv_layers.get(mesh.uv_props.src_uv): return False
+        if not mesh.uv_layers.get(mesh.uv_props.dst_uv): return False
+        if not mesh.uv_props.src_image: return False
+        if not mesh.uv_props.dst_image: return False
+        return True
+
+    def execute(self, context:Context):
+        mode = bpy.context.object.mode
+        bpy.ops.object.mode_set(mode = 'OBJECT')
+
+        mesh = context.active_object.data
+
+        src = util.blender_to_pillow(mesh.uv_props.src_image)
+        dst = util.blender_to_pillow(mesh.uv_props.dst_image)
+
+        for polygon in mesh.polygons:
+            # Get src uv region
+            w, h = mesh.uv_props.src_image.size
+            uv = mesh.uv_layers[mesh.uv_props.src_uv]
+            src_min_x = min(uv.data[i].uv.x for i in polygon.loop_indices) * w
+            src_min_y = min(uv.data[i].uv.y for i in polygon.loop_indices) * h
+            src_max_x = max(uv.data[i].uv.x for i in polygon.loop_indices) * w
+            src_max_y = max(uv.data[i].uv.y for i in polygon.loop_indices) * h
+            
+            # Get dst uv region
+            w, h = mesh.uv_props.dst_image.size
+            uv = mesh.uv_layers[mesh.uv_props.dst_uv]
+            dst_min_x = min(uv.data[i].uv.x for i in polygon.loop_indices) * w
+            dst_min_y = min(uv.data[i].uv.y for i in polygon.loop_indices) * h
+            dst_max_x = max(uv.data[i].uv.x for i in polygon.loop_indices) * w
+            dst_max_y = max(uv.data[i].uv.y for i in polygon.loop_indices) * h
+
+            # Transfer
+            w = math.ceil(dst_max_x - dst_min_x)
+            h = math.ceil(dst_max_y - dst_min_y)
+            if not w or not h: continue
+            crop = src.crop((src_min_x, src_min_y, src_max_x, src_max_y))
+            crop = crop.resize((w, h))
+            dst.paste(crop, (int(dst_min_x), int(dst_min_y)), crop)
+        
+        util.pillow_to_blender(mesh.uv_props.dst_image.name, dst, override = True)
+
+        bpy.ops.object.mode_set(mode = mode)
+        return {'FINISHED'}
