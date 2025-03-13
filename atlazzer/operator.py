@@ -231,7 +231,7 @@ class RegionFindResourcesOperator(Operator):
                 extra.extend(n.image for n in material.node_tree.nodes if hasattr(n, 'image') and n.image not in loaded)
 
             # Find in names
-            extra.extend(i for i in bpy.data.images if i.name.startswith(obj.name) or i.name.endswith(obj.name))
+            extra.extend(i for i in bpy.data.images if (i.name.startswith(obj.name) or i.name.endswith(obj.name)) and i not in loaded)
             
             for image in extra:
                 resource = mesh.region_resources.add()
