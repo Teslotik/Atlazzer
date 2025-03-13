@@ -186,6 +186,7 @@ class RegionMoveResourceOperator(Operator):
 class RegionCalcSizeOperator(Operator):
     bl_idname = 'region.calc_size'
     bl_label = 'Calc Size'
+    bl_options = {'REGISTER', 'UNDO'}
     
     target:StringProperty(
         name = 'Object'
@@ -210,6 +211,29 @@ class RegionCalcSizeOperator(Operator):
         if not self.target:
             self.target = context.active_object.name
         return self.execute(context)
+
+
+
+class RegionCalcAllSizesOperator(Operator):
+    bl_idname = 'region.calc_all_sizes'
+    bl_label = 'Calc All Sizes'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context:Context):
+        if context.mode != 'OBJECT': return False
+        return True
+
+    def execute(self, context:Context):
+        mode = bpy.context.object.mode
+        bpy.ops.object.mode_set(mode = 'OBJECT')
+
+        for obj in context.selected_objects:
+            if obj.type != 'MESH': continue
+            bpy.ops.region.calc_size(target = obj.name)
+
+        bpy.ops.object.mode_set(mode = mode)
+        return {'FINISHED'}
 
 
 
