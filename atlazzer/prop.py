@@ -41,6 +41,10 @@ class AtlasProperties(PropertyGroup):
             ('PIXELS', 'Pixels', '', 2)
         ]
     )
+    filter:StringProperty(
+        name = 'Filter',
+        default = ''
+    )
     pack_analysis_time:IntProperty(
         name = 'Pack Analysis Time',
         default = 5,

@@ -242,6 +242,7 @@ class RegionFindResourcesOperator(Operator):
     bl_label = 'Find Resources'
 
     def execute(self, context:Context):
+        f = context.scene.atlas_props.filter
         for obj in context.selected_objects:
             if obj.type != 'MESH': continue
             mesh = obj.data
@@ -258,6 +259,8 @@ class RegionFindResourcesOperator(Operator):
             extra.extend(i for i in bpy.data.images if (i.name.startswith(obj.name) or i.name.endswith(obj.name)) and i not in loaded)
             
             # We sort images so order of color, roughnes, normal, etc will be the same for all objects
+            start, *end = f.format(name = obj.name).split('*')
+            extra = list(filter(lambda i: i.name.startswith(start) and i.name.endswith(''.join(end)), extra))
             extra.sort(key = lambda i: i.name)
 
             for image in extra:

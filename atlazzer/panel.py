@@ -37,6 +37,7 @@ class AtlazzerPanel(Panel):
         col = layout.column(align = True)
         col.operator('atlas.create', text = '1. Create Atlas')
         col.operator('region.find_resources', text = '2. Find Images')
+        col.prop(context.scene.atlas_props, 'filter')
         col.operator('region.calc_all_sizes', text = '3. Calc All Sizes')
         pack = col.column(align = True)
         pack.prop(context.scene.atlas_props, 'pack_algorithm')
