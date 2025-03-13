@@ -381,7 +381,7 @@ class AtlasPackHeuristicOperator(Operator):
     def execute(self, context:Context):
         context.scene.atlas_props.draw_regions = True
 
-        regions = [o.data.region_props for o in context.selected_objects if o.type == 'MESH']
+        regions = list(set(o.data.region_props for o in context.selected_objects if o.type == 'MESH'))
         
         w, h = max(r.w for r in regions), max(r.h for r in regions)
         source_scale = 1 / max(w, h)
@@ -486,7 +486,7 @@ class AtlasPack2048Operator(Operator):
         return output
 
     def execute(self, context:Context):
-        regions = sorted([o.data.region_props for o in context.selected_objects if o.type == 'MESH'], key = lambda r: max(r.w, r.h), reverse = True)
+        regions = sorted(set(o.data.region_props for o in context.selected_objects if o.type == 'MESH'), key = lambda r: max(r.w, r.h), reverse = True)
         sorted_sizes = [(r.xw, r.xh) for r in regions]
         result = self.pack((context.scene.atlas_props.atlas_w, context.scene.atlas_props.atlas_h), sorted_sizes)
         for (region, (x, y)) in zip(regions, result):
@@ -520,13 +520,13 @@ class AtlasPackShelfOperator(Operator):
         return True
 
     def execute(self, context:Context):
-        rects = [struct.UVRect(o.data.region_props,
-            o.data.region_props.x,
-            o.data.region_props.y,
-            o.data.region_props.w,
-            o.data.region_props.h,
+        rects = [struct.UVRect(m.region_props,
+            m.region_props.x,
+            m.region_props.y,
+            m.region_props.w,
+            m.region_props.h,
             margin = self.margin
-        ) for o in context.selected_objects if o.type == 'MESH']
+        ) for m in set(o.data for o in context.selected_objects if o.type == 'MESH')]
 
         w = (len(rects) ** 0.5) * (sum(r.w for r in rects) / len(rects)) if self.scale else 1
         util.pack_shelf_decreasing_high(rects, w)
