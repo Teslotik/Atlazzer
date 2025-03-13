@@ -5,7 +5,6 @@ from bpy.props import BoolProperty, EnumProperty
 from . import constant
 
 class AtlazzerPanel(Panel):
-    '''Creates main panel in UV editor'''
     bl_idname = 'ATLAZZER_PT_main'
     bl_label = 'Atlazzer'
     bl_space_type = 'IMAGE_EDITOR'
@@ -59,7 +58,6 @@ class AtlazzerPanel(Panel):
 
 
 class RegionsPanel(Panel):
-    '''Creates sub panel in the main panel'''
     bl_idname = 'ATLAZZER_PT_regions'
     bl_parent_id = 'ATLAZZER_PT_main'
     bl_label = 'Regions'
@@ -171,7 +169,6 @@ def menu_VIEW3D_MT_uv_map(self, context):
 
 
 class AtlazzerUVPanel(Panel):
-    '''Creates uv panel in UV editor'''
     bl_idname = 'ATLAZZER_PT_uv'
     bl_label = 'Atlazzer UV'
     bl_space_type = 'IMAGE_EDITOR'
@@ -199,3 +196,35 @@ class AtlazzerUVPanel(Panel):
             row.prop(context.active_object.data.uv_props, 'dst_uv')
             row.prop(context.active_object.data.uv_props, 'dst_image')
             col.label(text = 'WARNING! Only works for separate uv islands without connections!')
+
+
+
+class AtlazzerMaterialPanel(Panel):
+    bl_idname = 'ATLAZZER_PT_material'
+    bl_label = 'Atlazzer Material'
+    bl_space_type = 'IMAGE_EDITOR'
+    bl_region_type = 'UI'
+    bl_category = 'Atlazzer Material'
+
+    def draw(self, context:Context):
+        layout:UILayout = self.layout
+
+        if not constant.DEBUG and not constant.is_image_processing_installed():
+            col = layout.column()
+            col.label(text = 'First, you MUST install image processing library')
+            col.operator('wm.install_image_processing')
+            return
+
+        layout.operator('material.bake')
+        row = layout.row(align = True)
+        row.prop(context.scene.material_props, 'width')
+        row.prop(context.scene.material_props, 'height')
+        layout.prop(context.scene.material_props, 'preset')
+        layout.prop(context.scene.material_props, 'bake_albedo')
+        layout.prop(context.scene.material_props, 'bake_roughness')
+        layout.prop(context.scene.material_props, 'bake_smooth')
+        layout.prop(context.scene.material_props, 'bake_metal')
+        layout.prop(context.scene.material_props, 'bake_metal_roughness')
+        layout.prop(context.scene.material_props, 'bake_metal_smooth')
+        layout.prop(context.scene.material_props, 'bake_normal')
+        layout.prop(context.scene.material_props, 'bake_emission')

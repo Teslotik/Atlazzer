@@ -9,7 +9,7 @@ from copy import deepcopy
 import math
 
 import bpy
-from bpy.types import Operator, Context, Event, Image, Mesh, Object, UILayout
+from bpy.types import Operator, Context, Event, Image, Mesh, Object, UILayout, ShaderNodeTexImage
 from bpy.props import StringProperty, BoolProperty, FloatProperty, IntProperty, EnumProperty
 from mathutils import Vector, Matrix
 
@@ -830,3 +830,162 @@ class UVTransferImageOperator(Operator):
 
         bpy.ops.object.mode_set(mode = mode)
         return {'FINISHED'}
+
+
+
+class MaterialBakeOperator(Operator):
+    bl_idname = 'material.bake'
+    bl_label = 'Bake Material'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def draw(self, context:Context):
+        pass
+
+    @classmethod
+    def poll(cls, context:Context):
+        if not context.selected_objects: return False
+        return True
+
+    def execute(self, context:Context):
+        import PIL.ImageOps
+        import PIL.Image
+
+        mode = bpy.context.object.mode
+        engine = context.scene.render.engine
+        bpy.ops.object.mode_set(mode = 'OBJECT')
+        context.scene.render.engine = 'CYCLES'
+        active = context.view_layer.objects.active
+        selected = [o for o in context.selected_objects if o.select_get()]
+
+        for obj in selected:
+            obj.select_set(False)
+            
+        for obj in selected:
+            if obj.type != 'MESH': continue
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+            mesh:Mesh = obj.data
+
+            context.scene.render.bake.target = 'IMAGE_TEXTURES'
+            context.scene.render.bake.use_clear = True
+
+            # Create textures
+            w, h = context.scene.material_props.width, context.scene.material_props.height
+            if context.scene.material_props.bake_albedo: albedo = bpy.data.images.new(obj.name + '_c', w, h, alpha = True)
+            if context.scene.material_props.bake_roughness: roughness = bpy.data.images.new(obj.name + '_ro', w, h, alpha = True)
+            if context.scene.material_props.bake_smooth: smooth = bpy.data.images.new(obj.name + '_s', w, h, alpha = True)
+            if context.scene.material_props.bake_metal: metal = bpy.data.images.new(obj.name + '_m', w, h, alpha = True)
+            if context.scene.material_props.bake_metal_roughness: metal_roughness = bpy.data.images.new(obj.name + '_rm', w, h, alpha = True)
+            if context.scene.material_props.bake_metal_smooth: metal_smooth = bpy.data.images.new(obj.name + '_sm', w, h, alpha = True)
+            if context.scene.material_props.bake_normal: normal = bpy.data.images.new(obj.name + '_n', w, h, alpha = True)
+            if context.scene.material_props.bake_emission: emission = bpy.data.images.new(obj.name + '_e', w, h, alpha = True)
+
+            nodes = [(m, m.node_tree.nodes.new('ShaderNodeTexImage')) for m in mesh.materials]
+            outputs = [m.node_tree.get_output_node('ALL') for m in mesh.materials]
+            for material, node in nodes:
+                material.node_tree.nodes.active = node
+            
+            if context.scene.material_props.bake_albedo:
+                for material, node in nodes: node.image = albedo
+                context.scene.render.bake.use_pass_direct = False
+                context.scene.render.bake.use_pass_indirect = False
+                context.scene.render.bake.use_pass_color = True
+                bpy.ops.object.bake(type = 'DIFFUSE')
+            if context.scene.material_props.bake_roughness:
+                self.bake_roughness(nodes, roughness)
+            if context.scene.material_props.bake_smooth:
+                self.bake_smooth(nodes, smooth, w, h)
+            if context.scene.material_props.bake_metal:
+                self.bake_metal(nodes, outputs, metal)
+            if context.scene.material_props.bake_metal_roughness:
+                temp1 = bpy.data.images.new('temp1', w, h, alpha = True)
+                temp2 = bpy.data.images.new('temp2', w, h, alpha = True)
+                self.bake_metal(nodes, outputs, temp1)
+                self.bake_roughness(nodes, temp2)
+                #
+                r = util.blender_to_pillow(temp1).convert('L')
+                a = util.blender_to_pillow(temp2).convert('L')
+                util.pillow_to_blender(metal_roughness.name, PIL.Image.merge('RGBA', (r, r, r, a)), override = True)
+                #
+                bpy.data.images.remove(temp1)
+                bpy.data.images.remove(temp2)
+            if context.scene.material_props.bake_metal_smooth:
+                temp1 = bpy.data.images.new('temp1', w, h, alpha = True)
+                temp2 = bpy.data.images.new('temp2', w, h, alpha = True)
+                self.bake_metal(nodes, outputs, temp1)
+                self.bake_smooth(nodes, temp2, w, h)
+                #
+                r = util.blender_to_pillow(temp1).convert('L')
+                a = util.blender_to_pillow(temp2).convert('L')
+                util.pillow_to_blender(metal_smooth.name, PIL.Image.merge('RGBA', (r, r, r, a)), override = True)
+                #
+                bpy.data.images.remove(temp1)
+                bpy.data.images.remove(temp2)
+            if context.scene.material_props.bake_normal:
+                for material, node in nodes: node.image = normal
+                bpy.ops.object.bake(type = 'NORMAL')
+            if context.scene.material_props.bake_emission:
+                for material, node in nodes: node.image = emission
+                bpy.ops.object.bake(type = 'EMIT')
+            
+            for material, node in nodes:
+                material.node_tree.nodes.remove(node)
+            obj.select_set(False)
+
+        bpy.ops.object.mode_set(mode = mode)
+        context.scene.render.engine = engine
+        for obj in selected:
+            obj.select_set(True)
+        context.view_layer.objects.active = active
+        return {'FINISHED'}
+
+    def find_principled(self, root):
+        if root.type == 'BSDF_PRINCIPLED': return root
+        for input in root.inputs:
+            for link in input.links:
+                principled = self.find_principled(link.from_node)
+                if principled: return principled
+
+    def bake_metal(self, nodes, outputs, texture):
+        trash = []
+        # Prepare
+        # NOTE Metal will be baked as emission, so we should create emission shader, connect, bake, and restore previous connnections
+        for (material, node), output in zip(nodes, outputs):
+            node.image = texture
+            if not output: continue
+            principled = self.find_principled(output)
+            metallic = principled.inputs['Metallic']
+            prev = output.inputs['Surface'].links[0].from_socket if output.inputs['Surface'].links else None
+            emission = material.node_tree.nodes.new('ShaderNodeEmission')
+            emission.inputs['Color'].default_value = (metallic.default_value, metallic.default_value, metallic.default_value, 1)
+            trash.append((emission, prev))
+            # NOTE We don't need to store this links, because it will automatically be removed with emission node
+            material.node_tree.links.new(metallic.links[0].from_socket, emission.inputs['Color']) if metallic and metallic.links else None,
+            material.node_tree.links.new(emission.outputs['Emission'], output.inputs['Surface']),
+            material.node_tree.nodes.active = node
+
+        bpy.ops.object.bake(type = 'EMIT')
+
+        # Restore state
+        for (material, node), output, (emission, prev) in zip(nodes, outputs, trash):
+            if not output: continue
+            material.node_tree.nodes.remove(emission)
+            material.node_tree.links.new(prev, output.inputs['Surface'])
+    
+    def bake_roughness(self, nodes, texture):
+        for material, node in nodes:
+            node.image = texture
+        bpy.ops.object.bake(type = 'ROUGHNESS')
+    
+    def bake_smooth(self, nodes, texture, w, h):
+        import PIL.ImageOps
+        import PIL.Image
+        temp = bpy.data.images.new('temp', w, h, alpha = True)
+        for material, node in nodes:
+            node.image = temp
+        bpy.ops.object.bake(type = 'ROUGHNESS')
+        
+        inverted = PIL.ImageOps.invert(util.blender_to_pillow(temp).convert('RGB'))
+        util.pillow_to_blender(texture.name, PIL.Image.merge('RGBA', (*inverted.split(), PIL.Image.new('L', (w, h), 255))), override = True)
+        
+        bpy.data.images.remove(temp)

@@ -129,3 +129,102 @@ class UVProperties(PropertyGroup):
         name = 'Destination Image',
         type = Image
     )
+
+
+
+class MaterialProperties(PropertyGroup):
+    width:IntProperty(
+        name = 'Width',
+        default = 1024,
+        min = 1
+    )
+    height:IntProperty(
+        name = 'Height',
+        default = 1024,
+        min = 1
+    )
+
+    bake_albedo:BoolProperty(
+        name = 'Bake Albedo',
+        default = True
+    )
+    bake_roughness:BoolProperty(
+        name = 'Bake Roughness',
+        default = True
+    )
+    bake_smooth:BoolProperty(
+        name = 'Bake Smooth',
+        default = True
+    )
+    bake_metal:BoolProperty(
+        name = 'Bake Metal',
+        default = True
+    )
+    bake_metal_roughness:BoolProperty(
+        name = 'Bake Metal-Roughness',
+        default = True
+    )
+    bake_metal_smooth:BoolProperty(
+        name = 'Bake Metal-Smooth',
+        default = True
+    )
+    bake_normal:BoolProperty(
+        name = 'Bake Normal',
+        default = True
+    )
+    bake_emission:BoolProperty(
+        name = 'Bake Emission',
+        default = True
+    )
+
+    preset:EnumProperty(
+        name = 'Combine Preset',
+        items = [
+            ('ALL', 'All PBR', '', 1),
+            ('UNITY', 'Unity', '', 2),
+            ('CUSTOM', 'Custom', '', 3),
+        ],
+        get = lambda self: self.get_preset(),
+        set = lambda self, v: self.set_preset(v)
+    )
+
+    def is_all(self):
+        if not self.bake_albedo: return False
+        if not self.bake_roughness: return False
+        if not self.bake_smooth: return False
+        if not self.bake_metal: return False
+        if not self.bake_metal_roughness: return False
+        if not self.bake_metal_smooth: return False
+        if not self.bake_normal: return False
+        if not self.bake_emission: return False
+        return True
+    
+    def is_unity(self):
+        if self.bake_roughness: return False
+        if self.bake_smooth: return False
+        if self.bake_metal: return False
+        if self.bake_metal_roughness: return False
+        if not self.bake_metal_smooth: return False
+        return True
+
+    def get_preset(self):
+        if self.is_all(): return 1
+        if self.is_unity(): return 2
+        return 3
+    
+    def set_preset(self, v):
+        if v == 1:
+            self.bake_albedo = True
+            self.bake_roughness = True
+            self.bake_smooth = True
+            self.bake_metal = True
+            self.bake_metal_roughness = True
+            self.bake_metal_smooth = True
+            self.bake_normal = True
+            self.bake_emission = True
+        elif v == 2:
+            self.bake_roughness = False
+            self.bake_smooth = False
+            self.bake_metal = False
+            self.bake_metal_roughness = False
+            self.bake_metal_smooth = True

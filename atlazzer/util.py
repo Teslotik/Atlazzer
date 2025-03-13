@@ -41,7 +41,7 @@ def blender_to_pillow(image:Image):
 
     return img
 
-def pillow_to_blender(name:str, image, override = False) -> Image:
+def pillow_to_blender(name:str|None, image, override = False) -> Image:
     import PIL.Image
     image:PIL.Image = image
 
