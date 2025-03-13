@@ -954,14 +954,14 @@ class MaterialBakeOperator(Operator):
             node.image = texture
             if not output: continue
             principled = self.find_principled(output)
-            metallic = principled.inputs['Metallic']
+            metallic = principled.inputs['Metallic'] if principled else None
             prev = output.inputs['Surface'].links[0].from_socket if output.inputs['Surface'].links else None
             emission = material.node_tree.nodes.new('ShaderNodeEmission')
-            emission.inputs['Color'].default_value = (metallic.default_value, metallic.default_value, metallic.default_value, 1)
+            emission.inputs['Color'].default_value = (metallic.default_value, metallic.default_value, metallic.default_value, 1) if metallic else (0, 0, 0, 1)
             trash.append((emission, prev))
             # NOTE We don't need to store this links, because it will automatically be removed with emission node
-            material.node_tree.links.new(metallic.links[0].from_socket, emission.inputs['Color']) if metallic and metallic.links else None,
-            material.node_tree.links.new(emission.outputs['Emission'], output.inputs['Surface']),
+            if metallic and metallic.links: material.node_tree.links.new(metallic.links[0].from_socket, emission.inputs['Color'])
+            material.node_tree.links.new(emission.outputs['Emission'], output.inputs['Surface'])
             material.node_tree.nodes.active = node
 
         bpy.ops.object.bake(type = 'EMIT')
