@@ -152,33 +152,65 @@ class MaterialProperties(PropertyGroup):
         name = 'Bake Albedo',
         default = True
     )
+    albedo_suffix:StringProperty(
+        name = 'Albedo Suffix',
+        default = '_c'
+    )
     bake_roughness:BoolProperty(
         name = 'Bake Roughness',
         default = True
+    )
+    roughness_suffix:StringProperty(
+        name = 'Roughness Suffix',
+        default = '_ro'
     )
     bake_smooth:BoolProperty(
         name = 'Bake Smooth',
         default = True
     )
+    smooth_suffix:StringProperty(
+        name = 'Smooth Suffix',
+        default = '_s'
+    )
     bake_metal:BoolProperty(
         name = 'Bake Metal',
         default = True
+    )
+    metal_suffix:StringProperty(
+        name = 'Metal Suffix',
+        default = '_m'
     )
     bake_metal_roughness:BoolProperty(
         name = 'Bake Metal-Roughness',
         default = True
     )
+    metal_roughness_suffix:StringProperty(
+        name = 'Metal-Roughness Suffix',
+        default = '_mr'
+    )
     bake_metal_smooth:BoolProperty(
         name = 'Bake Metal-Smooth',
         default = True
+    )
+    metal_smooth_suffix:StringProperty(
+        name = 'Metal-Smooth Suffix',
+        default = '_ms'
     )
     bake_normal:BoolProperty(
         name = 'Bake Normal',
         default = True
     )
+    normal_suffix:StringProperty(
+        name = 'Normal Suffix',
+        default = '_n'
+    )
     bake_emission:BoolProperty(
         name = 'Bake Emission',
         default = True
+    )
+    emission_suffix:StringProperty(
+        name = 'Emission Suffix',
+        default = '_e'
     )
 
     preset:EnumProperty(

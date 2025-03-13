@@ -900,15 +900,16 @@ class MaterialBakeOperator(Operator):
             context.scene.render.bake.use_clear = True
 
             # Create textures
-            w, h = context.scene.material_props.width, context.scene.material_props.height
-            if context.scene.material_props.bake_albedo: albedo = bpy.data.images.new(obj.name + '_c', w, h, alpha = True)
-            if context.scene.material_props.bake_roughness: roughness = bpy.data.images.new(obj.name + '_ro', w, h, alpha = True)
-            if context.scene.material_props.bake_smooth: smooth = bpy.data.images.new(obj.name + '_s', w, h, alpha = True)
-            if context.scene.material_props.bake_metal: metal = bpy.data.images.new(obj.name + '_m', w, h, alpha = True)
-            if context.scene.material_props.bake_metal_roughness: metal_roughness = bpy.data.images.new(obj.name + '_rm', w, h, alpha = True)
-            if context.scene.material_props.bake_metal_smooth: metal_smooth = bpy.data.images.new(obj.name + '_sm', w, h, alpha = True)
-            if context.scene.material_props.bake_normal: normal = bpy.data.images.new(obj.name + '_n', w, h, alpha = True)
-            if context.scene.material_props.bake_emission: emission = bpy.data.images.new(obj.name + '_e', w, h, alpha = True)
+            p = context.scene.material_props
+            w, h = p.width, p.height
+            if p.bake_albedo: albedo = bpy.data.images.new(obj.name + p.albedo_suffix, w, h, alpha = True)
+            if p.bake_roughness: roughness = bpy.data.images.new(obj.name + p.roughness_suffix, w, h, alpha = True)
+            if p.bake_smooth: smooth = bpy.data.images.new(obj.name + p.smooth_suffix, w, h, alpha = True)
+            if p.bake_metal: metal = bpy.data.images.new(obj.name + p.metal_suffix, w, h, alpha = True)
+            if p.bake_metal_roughness: metal_roughness = bpy.data.images.new(obj.name + p.metal_roughness_suffix, w, h, alpha = True)
+            if p.bake_metal_smooth: metal_smooth = bpy.data.images.new(obj.name + p.metal_smooth_suffix, w, h, alpha = True)
+            if p.bake_normal: normal = bpy.data.images.new(obj.name + p.normal_suffix, w, h, alpha = True)
+            if p.bake_emission: emission = bpy.data.images.new(obj.name + p.emission_suffix, w, h, alpha = True)
 
             nodes = [(m, m.node_tree.nodes.new('ShaderNodeTexImage')) for m in mesh.materials]
             outputs = [m.node_tree.get_output_node('ALL') for m in mesh.materials]
