@@ -257,6 +257,9 @@ class RegionFindResourcesOperator(Operator):
             # Find in names
             extra.extend(i for i in bpy.data.images if (i.name.startswith(obj.name) or i.name.endswith(obj.name)) and i not in loaded)
             
+            # We sort images so order of color, roughnes, normal, etc will be the same for all objects
+            extra.sort(key = lambda i: i.name)
+
             for image in extra:
                 resource = mesh.region_resources.add()
                 resource.image = image
