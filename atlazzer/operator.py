@@ -918,20 +918,25 @@ class MaterialBakeOperator(Operator):
             
             if context.scene.material_props.bake_albedo:
                 for material, node in nodes: node.image = albedo
+                albedo.use_fake_user = True
                 albedo.colorspace_settings.name = 'sRGB'
                 context.scene.render.bake.use_pass_direct = False
                 context.scene.render.bake.use_pass_indirect = False
                 context.scene.render.bake.use_pass_color = True
                 bpy.ops.object.bake(type = 'DIFFUSE')
             if context.scene.material_props.bake_roughness:
+                roughness.use_fake_user = True
                 roughness.colorspace_settings.name = 'Non-Color'
                 self.bake_roughness(nodes, roughness)
             if context.scene.material_props.bake_smooth:
+                smooth.use_fake_user = True
                 self.bake_smooth(nodes, smooth, w, h)
             if context.scene.material_props.bake_metal:
+                metal.use_fake_user = True
                 metal.colorspace_settings.name = 'Non-Color'
                 self.bake_metal(nodes, outputs, metal)
             if context.scene.material_props.bake_metal_roughness:
+                metal_roughness.use_fake_user = True
                 temp1 = bpy.data.images.new('temp1', w, h, alpha = True)
                 temp2 = bpy.data.images.new('temp2', w, h, alpha = True)
                 temp1.colorspace_settings.name = 'Non-Color'
@@ -946,6 +951,7 @@ class MaterialBakeOperator(Operator):
                 bpy.data.images.remove(temp1)
                 bpy.data.images.remove(temp2)
             if context.scene.material_props.bake_metal_smooth:
+                metal_smooth.use_fake_user = True
                 temp1 = bpy.data.images.new('temp1', w, h, alpha = True)
                 temp2 = bpy.data.images.new('temp2', w, h, alpha = True)
                 self.bake_metal(nodes, outputs, temp1)
@@ -959,10 +965,12 @@ class MaterialBakeOperator(Operator):
                 bpy.data.images.remove(temp2)
             if context.scene.material_props.bake_normal:
                 for material, node in nodes: node.image = normal
+                normal.use_fake_user = True
                 normal.colorspace_settings.name = 'Non-Color'
                 bpy.ops.object.bake(type = 'NORMAL')
             if context.scene.material_props.bake_emission:
                 for material, node in nodes: node.image = emission
+                emission.use_fake_user = True
                 emission.colorspace_settings.name = 'sRGB'
                 bpy.ops.object.bake(type = 'EMIT')
             
