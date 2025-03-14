@@ -918,25 +918,30 @@ class MaterialBakeOperator(Operator):
             
             if context.scene.material_props.bake_albedo:
                 for material, node in nodes: node.image = albedo
+                albedo.colorspace_settings.name = 'sRGB'
                 context.scene.render.bake.use_pass_direct = False
                 context.scene.render.bake.use_pass_indirect = False
                 context.scene.render.bake.use_pass_color = True
                 bpy.ops.object.bake(type = 'DIFFUSE')
             if context.scene.material_props.bake_roughness:
+                roughness.colorspace_settings.name = 'Non-Color'
                 self.bake_roughness(nodes, roughness)
             if context.scene.material_props.bake_smooth:
                 self.bake_smooth(nodes, smooth, w, h)
             if context.scene.material_props.bake_metal:
+                metal.colorspace_settings.name = 'Non-Color'
                 self.bake_metal(nodes, outputs, metal)
             if context.scene.material_props.bake_metal_roughness:
                 temp1 = bpy.data.images.new('temp1', w, h, alpha = True)
                 temp2 = bpy.data.images.new('temp2', w, h, alpha = True)
+                temp1.colorspace_settings.name = 'Non-Color'
+                temp2.colorspace_settings.name = 'Non-Color'
                 self.bake_metal(nodes, outputs, temp1)
                 self.bake_roughness(nodes, temp2)
                 #
-                r = util.blender_to_pillow(temp1).convert('L')
-                a = util.blender_to_pillow(temp2).convert('L')
-                util.pillow_to_blender(metal_roughness.name, PIL.Image.merge('RGBA', (r, r, r, a)), override = True)
+                r, *_ = util.blender_to_pillow(temp1).split()
+                a, *_ = util.blender_to_pillow(temp2).split()
+                util.pillow_to_blender(metal_roughness.name, PIL.Image.merge('RGBA', (r, r, r, a)), override = True, colorspace = 'Non-Color')
                 #
                 bpy.data.images.remove(temp1)
                 bpy.data.images.remove(temp2)
@@ -945,18 +950,20 @@ class MaterialBakeOperator(Operator):
                 temp2 = bpy.data.images.new('temp2', w, h, alpha = True)
                 self.bake_metal(nodes, outputs, temp1)
                 self.bake_smooth(nodes, temp2, w, h)
+                r, *_ = util.blender_to_pillow(temp1).split()
+                a, *_ = util.blender_to_pillow(temp2).split()
                 #
-                r = util.blender_to_pillow(temp1).convert('L')
-                a = util.blender_to_pillow(temp2).convert('L')
-                util.pillow_to_blender(metal_smooth.name, PIL.Image.merge('RGBA', (r, r, r, a)), override = True)
+                util.pillow_to_blender(metal_smooth.name, PIL.Image.merge('RGBA', (r, r, r, a)), override = True, colorspace = 'Non-Color')
                 #
                 bpy.data.images.remove(temp1)
                 bpy.data.images.remove(temp2)
             if context.scene.material_props.bake_normal:
                 for material, node in nodes: node.image = normal
+                normal.colorspace_settings.name = 'Non-Color'
                 bpy.ops.object.bake(type = 'NORMAL')
             if context.scene.material_props.bake_emission:
                 for material, node in nodes: node.image = emission
+                emission.colorspace_settings.name = 'sRGB'
                 bpy.ops.object.bake(type = 'EMIT')
             
             for material, node in nodes:
@@ -1015,8 +1022,18 @@ class MaterialBakeOperator(Operator):
         for material, node in nodes:
             node.image = temp
         bpy.ops.object.bake(type = 'ROUGHNESS')
-        
-        inverted = PIL.ImageOps.invert(util.blender_to_pillow(temp).convert('RGB'))
-        util.pillow_to_blender(texture.name, PIL.Image.merge('RGBA', (*inverted.split(), PIL.Image.new('L', (w, h), 255))), override = True)
+
+        r, g, b, *_ = util.blender_to_pillow(temp).split()
+        img = util.blender_to_pillow(temp)
+        pixels = img.load()
+        # Invert with gamma space
+        for i in range(img.width):
+            for j in range(img.height):
+                r, g, b, a = pixels[i, j]
+                r = (1 - (r / 255) ** 2.2) * 255
+                g = (1 - (g / 255) ** 2.2) * 255
+                b = (1 - (b / 255) ** 2.2) * 255
+                pixels[i, j] = (int(r), int(g), int(b), a)
+        util.pillow_to_blender(texture.name, img, override = True, colorspace = 'Non-Color')
         
         bpy.data.images.remove(temp)

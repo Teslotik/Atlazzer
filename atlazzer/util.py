@@ -8,7 +8,8 @@ from bpy.types import Image
 from . import constant
 from . import struct
 
-
+gamma_table = [int((i / 255) ** (1.0 / 2.2) * 255) for i in range(256)]
+gamma_table_inv = [int((i / 255) ** 2.2 * 255) for i in range(256)]
 
 def install_module(mod:str, version:str|None, path:str):
     result = subprocess.run([
@@ -41,7 +42,7 @@ def blender_to_pillow(image:Image):
 
     return img
 
-def pillow_to_blender(name:str|None, image, override = False) -> Image:
+def pillow_to_blender(name:str|None, image, override = False, colorspace = 'sRGB') -> Image:
     import PIL.Image
     image:PIL.Image = image
 
@@ -51,14 +52,17 @@ def pillow_to_blender(name:str|None, image, override = False) -> Image:
     img = bpy.data.images.get(name) if override else None
     if image.mode == 'L':
         img = img or bpy.data.images.new(name, width = w, height = h, alpha = False)
+        img.colorspace_settings.name = colorspace
         pixels_float = [(r / 255, ) for r in pixels]
         img.pixels = [channel for pixel in pixels_float for channel in pixel]
     elif image.mode == 'RGB':
         img = img or bpy.data.images.new(name, width = w, height = h, alpha = False)
+        img.colorspace_settings.name = colorspace
         pixels_float = [(r / 255, g / 255, b / 255) for r, g, b in pixels]
         img.pixels = [channel for pixel in pixels_float for channel in pixel]
     elif image.mode == 'RGBA':
         img = img or bpy.data.images.new(name, width = w, height = h, alpha = True)
+        img.colorspace_settings.name = colorspace
         pixels_float = [(r / 255, g / 255, b / 255, a / 255) for r, g, b, a in pixels]
         img.pixels = [channel for pixel in pixels_float for channel in pixel]
     else:
@@ -66,6 +70,14 @@ def pillow_to_blender(name:str|None, image, override = False) -> Image:
     
     img.update()
     return img
+
+def apply_gamma_correction(image):
+    assert(image.mode == 'L')
+    return image.point(gamma_table)
+
+def revert_gamma_correction(image):
+    assert(image.mode == 'L')
+    return image.point(gamma_table_inv)
 
 def pack_shelf_decreasing_high(rects, w:float):
     if not rects: return
