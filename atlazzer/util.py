@@ -53,21 +53,23 @@ def pillow_to_blender(name:str|None, image, override = False, colorspace = 'sRGB
     if image.mode == 'L':
         img = img or bpy.data.images.new(name, width = w, height = h, alpha = False)
         img.colorspace_settings.name = colorspace
-        pixels_float = [(r / 255, ) for r in pixels]
+        pixels_float = [(min(max(r / 255, 0), 1), ) for r in pixels]
         img.pixels = [channel for pixel in pixels_float for channel in pixel]
     elif image.mode == 'RGB':
         img = img or bpy.data.images.new(name, width = w, height = h, alpha = False)
         img.colorspace_settings.name = colorspace
-        pixels_float = [(r / 255, g / 255, b / 255) for r, g, b in pixels]
+        pixels_float = [(min(max(r / 255, 0), 1), min(max(g / 255, 0), 1), min(max(b / 255, 0), 1)) for r, g, b in pixels]
         img.pixels = [channel for pixel in pixels_float for channel in pixel]
     elif image.mode == 'RGBA':
         img = img or bpy.data.images.new(name, width = w, height = h, alpha = True)
         img.colorspace_settings.name = colorspace
-        pixels_float = [(r / 255, g / 255, b / 255, a / 255) for r, g, b, a in pixels]
+        pixels_float = [(min(max(r / 255, 0), 1), min(max(g / 255, 0), 1), min(max(b / 255, 0), 1), min(max(a / 255, 0), 1)) for r, g, b, a in pixels]
         img.pixels = [channel for pixel in pixels_float for channel in pixel]
     else:
         raise 'Failed to convert mode'
     
+    assert len(img.pixels) == img.size[0] * img.size[1] * img.channels
+
     img.update()
     return img
 
