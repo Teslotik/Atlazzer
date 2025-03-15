@@ -1,6 +1,7 @@
 import subprocess
 import os, sys
 from typing import List
+import re
 
 import bpy
 from bpy.types import Image
@@ -106,6 +107,15 @@ def pack_shelf_decreasing_high(rects, w:float):
     
     return rects
 
+# {name}, a
+# a{index}, a012
+# {name}*, abc
+# *{name}, bca
 def apply_fitler(string:str, pattern:str, **kwargs):
-    start, *end = pattern.format(**kwargs).split('*')
-    return string.startswith(start) and string.endswith(''.join(end))
+    if not pattern: return string
+    for item in re.findall(r'\{(.*?)\}', pattern):
+        if item == 'index': continue
+        pattern = pattern.replace('{' + item + '}', kwargs.get(item, ''))
+    pattern = pattern.replace('{index}', r'\d{,}')
+    pattern = pattern.replace('*', r'.{,}?')
+    return bool(re.fullmatch(pattern, string))
