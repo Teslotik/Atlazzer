@@ -52,17 +52,17 @@ def pillow_to_blender(name:str|None, image, override = False, colorspace = 'sRGB
 
     img = bpy.data.images.get(name) if override else None
     if image.mode == 'L':
-        img = img or bpy.data.images.new(name, width = w, height = h, alpha = False)
+        img = img or bpy.data.images.new(name, width = w, height = h, alpha = False, float_buffer = True)
         img.colorspace_settings.name = colorspace
         pixels_float = [(min(max(r / 255, 0), 1), ) for r in pixels]
         img.pixels = [channel for pixel in pixels_float for channel in pixel]
     elif image.mode == 'RGB':
-        img = img or bpy.data.images.new(name, width = w, height = h, alpha = False)
+        img = img or bpy.data.images.new(name, width = w, height = h, alpha = False, float_buffer = True)
         img.colorspace_settings.name = colorspace
         pixels_float = [(min(max(r / 255, 0), 1), min(max(g / 255, 0), 1), min(max(b / 255, 0), 1)) for r, g, b in pixels]
         img.pixels = [channel for pixel in pixels_float for channel in pixel]
     elif image.mode == 'RGBA':
-        img = img or bpy.data.images.new(name, width = w, height = h, alpha = True)
+        img = img or bpy.data.images.new(name, width = w, height = h, alpha = True, float_buffer = True)
         img.colorspace_settings.name = colorspace
         pixels_float = [(min(max(r / 255, 0), 1), min(max(g / 255, 0), 1), min(max(b / 255, 0), 1), min(max(a / 255, 0), 1)) for r, g, b, a in pixels]
         img.pixels = [channel for pixel in pixels_float for channel in pixel]

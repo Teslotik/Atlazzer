@@ -936,14 +936,14 @@ class MaterialBakeOperator(Operator):
             # Create textures
             p = context.scene.material_props
             w, h = p.width, p.height
-            if p.bake_albedo: albedo = bpy.data.images.new(obj.name + p.albedo_suffix, w, h, alpha = True)
-            if p.bake_roughness: roughness = bpy.data.images.new(obj.name + p.roughness_suffix, w, h, alpha = True)
-            if p.bake_smooth: smooth = bpy.data.images.new(obj.name + p.smooth_suffix, w, h, alpha = True)
-            if p.bake_metal: metal = bpy.data.images.new(obj.name + p.metal_suffix, w, h, alpha = True)
-            if p.bake_metal_roughness: metal_roughness = bpy.data.images.new(obj.name + p.metal_roughness_suffix, w, h, alpha = True)
-            if p.bake_metal_smooth: metal_smooth = bpy.data.images.new(obj.name + p.metal_smooth_suffix, w, h, alpha = True)
-            if p.bake_normal: normal = bpy.data.images.new(obj.name + p.normal_suffix, w, h, alpha = True)
-            if p.bake_emission: emission = bpy.data.images.new(obj.name + p.emission_suffix, w, h, alpha = True)
+            if p.bake_albedo: albedo = bpy.data.images.new(obj.name + p.albedo_suffix, w, h, alpha = True, float_buffer = True)
+            if p.bake_roughness: roughness = bpy.data.images.new(obj.name + p.roughness_suffix, w, h, alpha = True, float_buffer = True)
+            if p.bake_smooth: smooth = bpy.data.images.new(obj.name + p.smooth_suffix, w, h, alpha = True, float_buffer = True)
+            if p.bake_metal: metal = bpy.data.images.new(obj.name + p.metal_suffix, w, h, alpha = True, float_buffer = True)
+            if p.bake_metal_roughness: metal_roughness = bpy.data.images.new(obj.name + p.metal_roughness_suffix, w, h, alpha = True, float_buffer = True)
+            if p.bake_metal_smooth: metal_smooth = bpy.data.images.new(obj.name + p.metal_smooth_suffix, w, h, alpha = True, float_buffer = True)
+            if p.bake_normal: normal = bpy.data.images.new(obj.name + p.normal_suffix, w, h, alpha = True, float_buffer = True)
+            if p.bake_emission: emission = bpy.data.images.new(obj.name + p.emission_suffix, w, h, alpha = True, float_buffer = True)
 
             nodes = [(m, m.node_tree.nodes.new('ShaderNodeTexImage')) for m in mesh.materials]
             outputs = [m.node_tree.get_output_node('ALL') for m in mesh.materials]
@@ -971,8 +971,8 @@ class MaterialBakeOperator(Operator):
                 self.bake_metal(nodes, outputs, metal)
             if context.scene.material_props.bake_metal_roughness:
                 metal_roughness.use_fake_user = True
-                temp1 = bpy.data.images.new('temp1', w, h, alpha = True)
-                temp2 = bpy.data.images.new('temp2', w, h, alpha = True)
+                temp1 = bpy.data.images.new('temp1', w, h, alpha = True, float_buffer = True)
+                temp2 = bpy.data.images.new('temp2', w, h, alpha = True, float_buffer = True)
                 temp1.colorspace_settings.name = 'Non-Color'
                 temp2.colorspace_settings.name = 'Non-Color'
                 self.bake_metal(nodes, outputs, temp1)
@@ -986,8 +986,8 @@ class MaterialBakeOperator(Operator):
                 bpy.data.images.remove(temp2)
             if context.scene.material_props.bake_metal_smooth:
                 metal_smooth.use_fake_user = True
-                temp1 = bpy.data.images.new('temp1', w, h, alpha = True)
-                temp2 = bpy.data.images.new('temp2', w, h, alpha = True)
+                temp1 = bpy.data.images.new('temp1', w, h, alpha = True, float_buffer = True)
+                temp2 = bpy.data.images.new('temp2', w, h, alpha = True, float_buffer = True)
                 self.bake_metal(nodes, outputs, temp1)
                 self.bake_smooth(nodes, temp2, w, h)
                 r, *_ = util.blender_to_pillow(temp1).split()
@@ -1060,7 +1060,7 @@ class MaterialBakeOperator(Operator):
     def bake_smooth(self, nodes, texture, w, h):
         import PIL.ImageOps
         import PIL.Image
-        temp = bpy.data.images.new('temp', w, h, alpha = True)
+        temp = bpy.data.images.new('temp', w, h, alpha = True, float_buffer = True)
         for material, node in nodes:
             node.image = temp
         bpy.ops.object.bake(type = 'ROUGHNESS')
