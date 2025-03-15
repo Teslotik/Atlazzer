@@ -112,6 +112,8 @@ class RegionProperties(PropertyGroup):
             co.vector.y = (co.vector.y - self.py) / self.ph * value + self.py if self.ph > 0 else 0
         self.ph = value
 
+
+
 class RegionResource(PropertyGroup):
     image:PointerProperty(type = Image)
     layer:StringProperty(default = 'color')  # NOTE Idk should it be int or str for better user experience

@@ -55,6 +55,7 @@ classes = [
     operator.RegionCalcSizeOperator,
     operator.RegionCalcAllSizesOperator,
     operator.RegionFindResourcesOperator,
+    operator.RegionRenameResourcesOperator,
     operator.AtlasScaleOperator,
     operator.AtlasCreateOperator,
     operator.AtlasPackHeuristicOperator,

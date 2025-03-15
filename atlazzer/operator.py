@@ -272,6 +272,37 @@ class RegionFindResourcesOperator(Operator):
 
 
 
+class RegionRenameResourcesOperator(Operator):
+    bl_idname = 'region.rename_resources'
+    bl_label = 'Rename Resources'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    filter:StringProperty(
+        name = 'Filter',
+        default = 'color'
+    )
+
+    replace:StringProperty(
+        name = 'Replace With',
+        default = 'color'
+    )
+
+    def draw(self, context:Context):
+        layout:UILayout = self.layout
+        layout.prop(self, 'filter')
+        layout.prop(self, 'replace')
+
+    def execute(self, context:Context):
+        meshes = [m for m in set(o.data for o in context.selected_objects if o.type == 'MESH')]
+        for mesh in meshes:
+            for resource in mesh.region_resources:
+                if not resource.image: continue
+                if not util.apply_fitler(resource.image.name, self.filter, name = mesh.id_data.name): continue
+                resource.layer = self.replace
+        return {'FINISHED'}
+
+
+
 class AtlasScaleOperator(bpy.types.Operator):
     bl_idname = 'atlas.scale'
     bl_label = 'Scale Atlas'

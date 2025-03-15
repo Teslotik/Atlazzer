@@ -105,3 +105,7 @@ def pack_shelf_decreasing_high(rects, w:float):
         dx += rect.w
     
     return rects
+
+def apply_fitler(string:str, pattern:str, **kwargs):
+    start, *end = pattern.format(**kwargs).split('*')
+    return string.startswith(start) and string.endswith(''.join(end))
