@@ -243,8 +243,12 @@ class RegionFindResourcesOperator(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context:Context):
-        for obj in context.selected_objects:
-            if obj.type != 'MESH': continue
+        # We sort objects, so objects names without index appears first
+        sort = sorted((o for o in context.selected_objects if o.type == 'MESH'), key = lambda o: o.name)
+        # Since props are linked to object data, we find resources for data, not object
+        visited = set()
+        objects = [o for o in sort if not (o.data in visited or visited.add(o.data))]
+        for obj in objects:
             mesh = obj.data
 
             loaded = [r.image for r in mesh.region_resources]
