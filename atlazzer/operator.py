@@ -1,6 +1,6 @@
 import subprocess
 import os, sys
-from typing import List, Dict, Any
+from typing import List, Tuple, Dict, Any
 import math
 from functools import reduce
 from random import choice, randint, random
@@ -954,10 +954,10 @@ class MaterialBakeOperator(Operator):
                 for material, node in nodes: node.image = albedo
                 albedo.use_fake_user = True
                 albedo.colorspace_settings.name = 'sRGB'
-                context.scene.render.bake.use_pass_direct = False
-                context.scene.render.bake.use_pass_indirect = False
-                context.scene.render.bake.use_pass_color = True
-                bpy.ops.object.bake(type = 'DIFFUSE')
+                state = [self.use_emission(m, n, m.node_tree.get_output_node('ALL'), m.node_tree.get_output_node('ALL'), 'Base Color', 'Color') for m, n in nodes]
+                bpy.ops.object.bake(type = 'EMIT')
+                for (material, node), (e, output_connection) in zip(nodes, state):
+                    self.unuse_emission(material, material.node_tree.get_output_node('ALL'), e, output_connection)
             if context.scene.material_props.bake_roughness:
                 roughness.use_fake_user = True
                 roughness.colorspace_settings.name = 'Non-Color'
@@ -1025,6 +1025,43 @@ class MaterialBakeOperator(Operator):
             for link in input.links:
                 principled = self.find_principled(link.from_node)
                 if principled: return principled
+
+    def use_emission(self, material, texture, output, root, *sockets):
+        def walk(node, sockets:Tuple[str]):
+            for input in node.inputs:
+                if input.name in sockets: return node
+                for link in input.links:
+                    n = walk(link.from_node, sockets)
+                    if n: return n
+
+        # Find a node with a specific socket name
+        # We will link its socket connection with emission for baking
+        target = walk(root, sockets)
+        if not target: return []
+
+        input = next(i for i in target.inputs if i.name in sockets)
+        try:
+            default_value = list(input.default_value)
+        except:
+            default_value = [input.default_value, input.default_value, input.default_value, 1]
+
+        emission = material.node_tree.nodes.new('ShaderNodeEmission')
+        emission.inputs['Color'].default_value = default_value
+
+        # We store output node connection to restore it after baking
+        output_connection = output.inputs['Surface'].links[0].from_socket if output.inputs['Surface'].links else None
+
+        # NOTE We don't need to store this links, because it will automatically be removed with emission node
+        if input.links: material.node_tree.links.new(input.links[0].from_socket, emission.inputs['Color'])
+        material.node_tree.links.new(emission.outputs['Emission'], output.inputs['Surface'])
+        material.node_tree.nodes.active = texture
+
+        return emission, output_connection
+    
+    def unuse_emission(self, material, output, emission, output_connection):
+        material.node_tree.nodes.remove(emission)
+        if output_connection:
+            material.node_tree.links.new(output_connection, output.inputs['Surface'])
 
     def bake_metal(self, nodes, outputs, texture):
         trash = []
