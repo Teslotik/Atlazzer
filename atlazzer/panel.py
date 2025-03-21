@@ -38,7 +38,8 @@ class AtlazzerPanel(Panel):
         col.operator('atlas.create', text = '1. Create Atlas')
         row = col.row(align = True)
         row.operator('region.find_resources', text = '2. Find Images')
-        row.operator('region.rename_resources')
+        row.operator('region.remove_resources')
+        col.operator('region.rename_resources')
         col.prop(context.scene.atlas_props, 'filter')   # TODO add dict of filters and associated resources names
         row = col.row(align = True)
         row.operator('region.calc_all_sizes', text = '3. Calc All Sizes')

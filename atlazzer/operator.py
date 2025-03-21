@@ -302,6 +302,23 @@ class RegionFindResourcesOperator(Operator):
 
 
 
+class RegionRemoveResourcesOperator(Operator):
+    bl_idname = 'region.remove_resources'
+    bl_label = 'Remove Images'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context:Context):
+        return len(context.selected_objects) > 0
+
+    def execute(self, context:Context):
+        for obj in context.selected_objects:
+            if obj.type != 'MESH': continue
+            obj.data.region_resources.clear()
+        return {'FINISHED'}
+
+
+
 class RegionRenameResourcesOperator(Operator):
     bl_idname = 'region.rename_resources'
     bl_label = 'Rename Resources'
