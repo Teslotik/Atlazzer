@@ -237,6 +237,33 @@ class RegionCalcAllSizesOperator(Operator):
 
 
 
+class RegionResetSizeOperator(Operator):
+    bl_idname = 'region.reset_size'
+    bl_label = 'Reset Size'
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    @classmethod
+    def poll(cls, context:Context):
+        if not context.selected_objects: return False
+        return True
+
+    def execute(self, context:Context):
+        mode = bpy.context.object.mode
+        bpy.ops.object.mode_set(mode = 'OBJECT')
+        
+        for obj in context.selected_objects:
+            if obj.type != 'MESH': continue
+            props = obj.data.region_props
+            props.x = 0
+            props.y = 0
+            props.w = 1
+            props.h = 1
+
+        bpy.ops.object.mode_set(mode = mode)
+        return {'FINISHED'}
+
+
+
 class RegionFindResourcesOperator(Operator):
     bl_idname = 'region.find_resources'
     bl_label = 'Find Resources'

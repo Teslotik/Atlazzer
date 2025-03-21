@@ -40,7 +40,9 @@ class AtlazzerPanel(Panel):
         row.operator('region.find_resources', text = '2. Find Images')
         row.operator('region.rename_resources')
         col.prop(context.scene.atlas_props, 'filter')   # TODO add dict of filters and associated resources names
-        col.operator('region.calc_all_sizes', text = '3. Calc All Sizes')
+        row = col.row(align = True)
+        row.operator('region.calc_all_sizes', text = '3. Calc All Sizes')
+        row.operator('region.reset_size')
         pack = col.column(align = True)
         pack.prop(context.scene.atlas_props, 'pack_algorithm')
         if context.scene.atlas_props.pack_algorithm in ('SQUARE', 'OCCUPIED'):
