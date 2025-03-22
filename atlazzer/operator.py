@@ -981,6 +981,7 @@ class MaterialBakeOperator(Operator):
             p = context.scene.material_props
             w, h = p.width, p.height
             if p.bake_albedo: albedo = bpy.data.images.new(obj.name + p.albedo_suffix, w, h, alpha = True, float_buffer = True)
+            if p.bake_albedo_alpha: albedo_alpha = bpy.data.images.new(obj.name + p.albedo_alpha_suffix, w, h, alpha = True, float_buffer = True)
             if p.bake_roughness: roughness = bpy.data.images.new(obj.name + p.roughness_suffix, w, h, alpha = True, float_buffer = True)
             if p.bake_smooth: smooth = bpy.data.images.new(obj.name + p.smooth_suffix, w, h, alpha = True, float_buffer = True)
             if p.bake_metal: metal = bpy.data.images.new(obj.name + p.metal_suffix, w, h, alpha = True, float_buffer = True)
@@ -995,6 +996,7 @@ class MaterialBakeOperator(Operator):
                 material.node_tree.nodes.active = node
             
             if context.scene.material_props.bake_albedo:
+                # NOTE We use emit to bake albedo because otherwise it is black when metal == 1
                 for material, node in nodes: node.image = albedo
                 albedo.use_fake_user = True
                 albedo.colorspace_settings.name = 'sRGB'
@@ -1002,6 +1004,31 @@ class MaterialBakeOperator(Operator):
                 bpy.ops.object.bake(type = 'EMIT')
                 for (material, node), (e, output_connection) in zip(nodes, state):
                     self.unuse_emission(material, material.node_tree.get_output_node('ALL'), e, output_connection)
+            if context.scene.material_props.bake_albedo_alpha:
+                albedo_alpha.use_fake_user = True
+                temp1 = bpy.data.images.new('temp1', w, h, alpha = True, float_buffer = True)
+                temp2 = bpy.data.images.new('temp2', w, h, alpha = True, float_buffer = True)
+                # Bake albedo
+                for material, node in nodes: node.image = temp1
+                temp1.colorspace_settings.name = 'sRGB'
+                state = [self.use_emission(m, n, m.node_tree.get_output_node('ALL'), m.node_tree.get_output_node('ALL'), 'Base Color', 'Color', default_ = (1, 1, 1, 1)) for m, n in nodes]
+                bpy.ops.object.bake(type = 'EMIT')
+                for (material, node), (e, output_connection) in zip(nodes, state):
+                    self.unuse_emission(material, material.node_tree.get_output_node('ALL'), e, output_connection)
+                # Bake alpha
+                for material, node in nodes: node.image = temp2
+                temp2.colorspace_settings.name = 'sRGB'
+                state = [self.use_emission(m, n, m.node_tree.get_output_node('ALL'), m.node_tree.get_output_node('ALL'), 'Alpha') for m, n in nodes]
+                bpy.ops.object.bake(type = 'EMIT')
+                for (material, node), (e, output_connection) in zip(nodes, state):
+                    self.unuse_emission(material, material.node_tree.get_output_node('ALL'), e, output_connection)
+                # Combine
+                r, g, b, *_ = util.blender_to_pillow(temp1).split()
+                a, *_ = util.blender_to_pillow(temp2).split()
+                util.pillow_to_blender(albedo_alpha.name, PIL.Image.merge('RGBA', (r, g, b, a)), override = True, colorspace = 'sRGB')
+                #
+                bpy.data.images.remove(temp1)
+                bpy.data.images.remove(temp2)
             if context.scene.material_props.bake_roughness:
                 roughness.use_fake_user = True
                 roughness.colorspace_settings.name = 'Non-Color'
@@ -1070,7 +1097,7 @@ class MaterialBakeOperator(Operator):
                 principled = self.find_principled(link.from_node)
                 if principled: return principled
 
-    def use_emission(self, material, texture, output, root, *sockets):
+    def use_emission(self, material, texture, output, root, *sockets, default_ = (0, 0, 0, 1)):
         def walk(node, sockets:Tuple[str]):
             for input in node.inputs:
                 if input.name in sockets: return node
@@ -1081,13 +1108,16 @@ class MaterialBakeOperator(Operator):
         # Find a node with a specific socket name
         # We will link its socket connection with emission for baking
         target = walk(root, sockets)
-        if not target: return []
 
-        input = next(i for i in target.inputs if i.name in sockets)
-        try:
-            default_value = list(input.default_value)
-        except:
-            default_value = [input.default_value, input.default_value, input.default_value, 1]
+        if target:
+            input = next(i for i in target.inputs if i.name in sockets)
+            try:
+                default_value = list(input.default_value)
+            except:
+                default_value = [input.default_value, input.default_value, input.default_value, 1]
+        else:
+            input = None
+            default_value = default_
 
         emission = material.node_tree.nodes.new('ShaderNodeEmission')
         emission.inputs['Color'].default_value = default_value
@@ -1096,7 +1126,7 @@ class MaterialBakeOperator(Operator):
         output_connection = output.inputs['Surface'].links[0].from_socket if output.inputs['Surface'].links else None
 
         # NOTE We don't need to store this links, because it will automatically be removed with emission node
-        if input.links: material.node_tree.links.new(input.links[0].from_socket, emission.inputs['Color'])
+        if input and input.links: material.node_tree.links.new(input.links[0].from_socket, emission.inputs['Color'])
         material.node_tree.links.new(emission.outputs['Emission'], output.inputs['Surface'])
         material.node_tree.nodes.active = texture
 

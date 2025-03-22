@@ -158,6 +158,14 @@ class MaterialProperties(PropertyGroup):
         name = 'Albedo Suffix',
         default = '_c'
     )
+    bake_albedo_alpha:BoolProperty(
+        name = 'Bake Albedo-Alpha',
+        default = True
+    )
+    albedo_alpha_suffix:StringProperty(
+        name = 'Albedo Alpha Suffix',
+        default = '_ca'
+    )
     bake_roughness:BoolProperty(
         name = 'Bake Roughness',
         default = True
@@ -228,6 +236,7 @@ class MaterialProperties(PropertyGroup):
 
     def is_all(self):
         if not self.bake_albedo: return False
+        if not self.bake_albedo_alpha: return False
         if not self.bake_roughness: return False
         if not self.bake_smooth: return False
         if not self.bake_metal: return False
@@ -238,6 +247,7 @@ class MaterialProperties(PropertyGroup):
         return True
     
     def is_unity(self):
+        if not self.bake_albedo_alpha: return False
         if self.bake_roughness: return False
         if self.bake_smooth: return False
         if self.bake_metal: return False
@@ -253,6 +263,7 @@ class MaterialProperties(PropertyGroup):
     def set_preset(self, v):
         if v == 1:
             self.bake_albedo = True
+            self.bake_albedo_alpha = True
             self.bake_roughness = True
             self.bake_smooth = True
             self.bake_metal = True
@@ -261,6 +272,7 @@ class MaterialProperties(PropertyGroup):
             self.bake_normal = True
             self.bake_emission = True
         elif v == 2:
+            self.bake_albedo = False
             self.bake_roughness = False
             self.bake_smooth = False
             self.bake_metal = False
